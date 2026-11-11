@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { getAuthCallbackDestination } from "@/lib/auth/callback";
 import {
-  CANONICAL_SITE_URL,
   getAllowedAuthOrigin,
   getCanonicalCallbackUrl,
 } from "@/lib/auth/redirect";
@@ -30,7 +29,7 @@ export async function GET(request: Request) {
       const supabase = await createClient();
       return supabase.auth.exchangeCodeForSession(code);
     },
-    authOrigin ?? CANONICAL_SITE_URL
+    authOrigin
   );
 
   return NextResponse.redirect(destination);
