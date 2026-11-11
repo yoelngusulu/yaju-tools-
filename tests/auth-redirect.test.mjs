@@ -36,7 +36,6 @@ const {
   getAllowedAuthOrigin,
   getAuthCallbackOrigin,
   isAllowedAuthHost,
-  isCanonicalSiteHost,
 } = redirectModule;
 const { getAuthCallbackDestination } = callbackModule;
 
@@ -102,11 +101,12 @@ test("sends recovery callback URLs to the canonical host with the reset destinat
   assert.equal(callback.searchParams.get("code"), "test-recovery-code");
 });
 
-test("recovery form is served only on the canonical host", () => {
-  assert.equal(isCanonicalSiteHost("yaju-tools.com"), true);
-  assert.equal(isCanonicalSiteHost("YAJU-TOOLS.COM"), true);
-  assert.equal(isCanonicalSiteHost("yaju-tools.vercel.app"), false);
-  assert.equal(isCanonicalSiteHost(null), false);
+test("recovery form is served only on a permitted auth host", () => {
+  assert.equal(isAllowedAuthHost("yaju-tools.com", false), true);
+  assert.equal(isAllowedAuthHost("YAJU-TOOLS.COM", false), true);
+  assert.equal(isAllowedAuthHost("yaju-tools.vercel.app", false), false);
+  assert.equal(isAllowedAuthHost(null, false), false);
+  assert.equal(isAllowedAuthHost("localhost:3000", true), true);
 });
 
 test("canonicalizes callback requests before code exchange and validates next", () => {
