@@ -7,6 +7,7 @@ import { useState } from "react";
 import {
   getAuthCallbackUrl,
   getSafeNextPath,
+  isLocalAuthAllowed,
 } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
@@ -58,7 +59,7 @@ export default function RegisterForm({ nextPath }: RegisterFormProps) {
     setIsLoading(true);
 
     try {
-      const isLocalDevelopment = process.env.NODE_ENV !== "production";
+      const isLocalDevelopment = isLocalAuthAllowed(process.env.NODE_ENV);
       const emailRedirectTo = getAuthCallbackUrl(
         safeNextPath,
         window.location.origin,

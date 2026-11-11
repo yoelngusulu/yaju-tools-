@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import LoginForm from "@/components/auth/LoginForm";
 import {
   CANONICAL_SITE_URL,
+  isLocalAuthAllowed,
   getSafeNextPath,
   isAllowedAuthHost,
 } from "@/lib/auth/redirect";
@@ -18,7 +19,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     searchParams,
   ]);
 
-  const allowLocalhost = process.env.NODE_ENV !== "production";
+  const allowLocalhost = isLocalAuthAllowed(process.env.NODE_ENV);
   const requestHost = requestHeaders.get("host");
   const nextValue = typeof params.next === "string" ? params.next : null;
   const nextPath = getSafeNextPath(nextValue);

@@ -4,12 +4,13 @@ import { getAuthCallbackDestination } from "@/lib/auth/callback";
 import {
   getAllowedAuthOrigin,
   getCanonicalCallbackUrl,
+  isLocalAuthAllowed,
 } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const allowLocalhost = process.env.NODE_ENV !== "production";
+  const allowLocalhost = isLocalAuthAllowed(process.env.NODE_ENV);
   const authOrigin = getAllowedAuthOrigin(
     requestUrl.origin,
     allowLocalhost

@@ -14,6 +14,12 @@ const LOCAL_DEVELOPMENT_HOSTS = new Set([
   "[::1]",
 ]);
 
+export function isLocalAuthAllowed(
+  nodeEnv: string | undefined
+): boolean {
+  return nodeEnv === "development";
+}
+
 /**
  * Returns a trusted auth origin. Production accepts only the canonical site.
  * During local development, explicitly permitted loopback hosts are also accepted.

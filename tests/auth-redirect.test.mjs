@@ -35,6 +35,7 @@ const {
   getCanonicalCallbackUrl,
   getAllowedAuthOrigin,
   getAuthCallbackOrigin,
+  isLocalAuthAllowed,
   isAllowedAuthHost,
 } = redirectModule;
 const { getAuthCallbackDestination } = callbackModule;
@@ -200,18 +201,47 @@ test("allows only the canonical production host for authentication pages", () =>
   assert.equal(isAllowedAuthHost(null, false), false);
 });
 
-test("allows loopback authentication hosts only when local development is enabled", () => {
-  assert.equal(isAllowedAuthHost("localhost:3000", true), true);
-  assert.equal(isAllowedAuthHost("127.0.0.1:3000", true), true);
-  assert.equal(isAllowedAuthHost("[::1]:3000", true), true);
+test("allows loopback authentication only in development", () => {
+  for (const env of ["production", "test", "preview", "staging", undefined]) {
+    assert.equal(isLocalAuthAllowed(env), false);
+    assert.equal(
+      isAllowedAuthHost("localhost:3000", isLocalAuthAllowed(env)),
+      false
+    );
+  }
 
-  assert.equal(isAllowedAuthHost("localhost:3000", false), false);
-  assert.equal(isAllowedAuthHost("yaju-tools.vercel.app", true), false);
-  assert.equal(isAllowedAuthHost("attacker.example", true), false);
-  assert.equal(isAllowedAuthHost("localhost:3000/path", true), false);
+  assert.equal(isLocalAuthAllowed("development"), true);
+  assert.equal(isAllowedAuthHost("localhost:3000", isLocalAuthAllowed("development")), true);
+  assert.equal(isAllowedAuthHost("127.0.0.1:3000", isLocalAuthAllowed("development")), true);
+  assert.equal(isAllowedAuthHost("[::1]:3000", isLocalAuthAllowed("development")), true);
+  assert.equal(isAllowedAuthHost("yaju-tools.vercel.app", isLocalAuthAllowed("development")), false);
+  assert.equal(isAllowedAuthHost("attacker.example", isLocalAuthAllowed("development")), false);
+  assert.equal(isAllowedAuthHost("localhost:3000/path", isLocalAuthAllowed("development")), false);
 });
 
-test("uses a local callback origin only for explicitly allowed loopback origins", () => {
+test("uses localhost callbacks only in development and falls back to canonical production origin", () => {
+  for (const env of ["production", "test", "preview", "staging", undefined]) {
+    assert.equal(
+      getAuthCallbackOrigin(
+        "http://localhost:3000",
+        isLocalAuthAllowed(env)
+      ),
+      "https://yaju-tools.com"
+    );
+  }
+
+  assert.equal(
+    getAuthCallbackOrigin("https://yaju-tools.com", isLocalAuthAllowed("production")),
+    "https://yaju-tools.com"
+  );
+  assert.equal(
+    getAuthCallbackOrigin(
+      "http://localhost:3000",
+      isLocalAuthAllowed("development")
+    ),
+    "http://localhost:3000"
+  );
+
   assert.equal(
     getAllowedAuthOrigin("http://localhost:3000", true),
     "http://localhost:3000"

@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { getAuthCallbackUrl } from "@/lib/auth/redirect";
+import {
+  getAuthCallbackUrl,
+  isLocalAuthAllowed,
+} from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordForm() {
@@ -27,7 +30,7 @@ export default function ForgotPasswordForm() {
       const redirectTo = getAuthCallbackUrl(
         "/update-password",
         window.location.origin,
-        process.env.NODE_ENV !== "production"
+        isLocalAuthAllowed(process.env.NODE_ENV)
       );
 
       const { error: resetError } =

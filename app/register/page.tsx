@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import RegisterForm from "@/components/auth/RegisterForm";
 import {
   CANONICAL_SITE_URL,
+  isLocalAuthAllowed,
   getSafeNextPath,
   isAllowedAuthHost,
 } from "@/lib/auth/redirect";
@@ -20,7 +21,7 @@ export default async function RegisterPage({
     searchParams,
   ]);
 
-  const allowLocalhost = process.env.NODE_ENV !== "production";
+  const allowLocalhost = isLocalAuthAllowed(process.env.NODE_ENV);
   const requestHost = requestHeaders.get("host");
   const nextValue = typeof params.next === "string" ? params.next : null;
   const nextPath = getSafeNextPath(nextValue);
