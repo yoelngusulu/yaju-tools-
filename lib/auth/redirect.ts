@@ -1,3 +1,5 @@
+export const CANONICAL_SITE_URL = "https://yaju-tools.com";
+
 const DEFAULT_NEXT_PATH = "/dashboard";
 
 const ALLOWED_NEXT_PATHS = new Set([
@@ -30,10 +32,14 @@ export function getSafeNextPath(value: string | null | undefined): string {
   }
 
   try {
-    const base = "https://yaju-tools.com";
-    const resolved = new URL(value, base);
+    const resolved = new URL(value, CANONICAL_SITE_URL);
 
-    if (resolved.origin !== base || resolved.pathname !== value) {
+    if (
+      resolved.origin !== CANONICAL_SITE_URL ||
+      resolved.pathname !== value ||
+      resolved.search ||
+      resolved.hash
+    ) {
       return DEFAULT_NEXT_PATH;
     }
 
@@ -43,4 +49,10 @@ export function getSafeNextPath(value: string | null | undefined): string {
   } catch {
     return DEFAULT_NEXT_PATH;
   }
+}
+
+export function getAuthCallbackUrl(nextPath: string): string {
+  const callbackUrl = new URL("/auth/callback", CANONICAL_SITE_URL);
+  callbackUrl.searchParams.set("next", getSafeNextPath(nextPath));
+  return callbackUrl.toString();
 }
