@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { CANONICAL_SITE_URL, getSafeNextPath } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/server";
-
-function getSafeNextPath(value: string | null) {
-  if (value && value.startsWith("/") && !value.startsWith("//")) {
-    return value;
-  }
-  return null;
-}
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -19,7 +13,7 @@ export async function GET(request: Request) {
     const destination = isPasswordReset
       ? "/forgot-password?error=missing-code"
       : "/login?error=auth-callback";
-    return NextResponse.redirect(new URL(destination, "https://yaju-tools.com"));
+    return NextResponse.redirect(new URL(destination, CANONICAL_SITE_URL));
   }
 
   const supabase = await createClient();
@@ -30,10 +24,8 @@ export async function GET(request: Request) {
     const destination = isPasswordReset
       ? "/forgot-password?error=reset-link-invalid"
       : "/login?error=auth-callback";
-    return NextResponse.redirect(new URL(destination, "https://yaju-tools.com"));
+    return NextResponse.redirect(new URL(destination, CANONICAL_SITE_URL));
   }
 
-  return NextResponse.redirect(
-    new URL(nextPath || "/dashboard", "https://yaju-tools.com")
-  );
+  return NextResponse.redirect(new URL(nextPath, CANONICAL_SITE_URL));
 }
