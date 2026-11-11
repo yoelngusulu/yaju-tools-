@@ -9,7 +9,8 @@ type CodeExchange = (
 
 export async function getAuthCallbackDestination(
   requestUrl: string,
-  exchangeCode: CodeExchange
+  exchangeCode: CodeExchange,
+  siteOrigin = CANONICAL_SITE_URL
 ): Promise<URL> {
   const callbackUrl = new URL(requestUrl);
   const code = callbackUrl.searchParams.get("code");
@@ -22,7 +23,7 @@ export async function getAuthCallbackDestination(
     const path = isPasswordReset
       ? "/forgot-password?error=missing-code"
       : "/login?error=auth-callback";
-    return new URL(path, CANONICAL_SITE_URL);
+    return new URL(path, siteOrigin);
   }
 
   const { error } = await exchangeCode(code);
@@ -31,8 +32,8 @@ export async function getAuthCallbackDestination(
     const path = isPasswordReset
       ? "/forgot-password?error=reset-link-invalid"
       : "/login?error=auth-callback";
-    return new URL(path, CANONICAL_SITE_URL);
+    return new URL(path, siteOrigin);
   }
 
-  return new URL(nextPath, CANONICAL_SITE_URL);
+  return new URL(nextPath, siteOrigin);
 }
