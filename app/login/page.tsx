@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { getSafeNextPath as validateNextPath } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
-function getSafeNextPath() {
+function getNextPathFromLocation() {
   if (typeof window === "undefined") {
     return "/dashboard";
   }
@@ -15,15 +16,7 @@ function getSafeNextPath() {
     window.location.search
   ).get("next");
 
-  if (
-    nextPath &&
-    nextPath.startsWith("/") &&
-    !nextPath.startsWith("//")
-  ) {
-    return nextPath;
-  }
-
-  return "/dashboard";
+  return validateNextPath(nextPath);
 }
 
 export default function LoginPage() {
@@ -37,7 +30,7 @@ export default function LoginPage() {
   const [registerHref, setRegisterHref] = useState("/register");
 
   useEffect(() => {
-    const nextPath = getSafeNextPath();
+    const nextPath = getNextPathFromLocation();
 
     if (nextPath !== "/dashboard") {
       setRegisterHref(
@@ -65,7 +58,7 @@ export default function LoginPage() {
         throw signInError;
       }
 
-      router.push(getSafeNextPath());
+      router.push(getNextPathFromLocation());
       router.refresh();
     } catch (loginError) {
       setError(
