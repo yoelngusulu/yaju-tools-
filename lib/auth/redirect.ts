@@ -1,8 +1,6 @@
 export const CANONICAL_SITE_URL = "https://yaju-tools.com";
 
-export function isCanonicalSiteHost(host: string | null): boolean {
-  return host?.toLowerCase() === new URL(CANONICAL_SITE_URL).host;
-}
+const CANONICAL_SITE_HOST = new URL(CANONICAL_SITE_URL).host;
 
 const DEFAULT_NEXT_PATH = "/dashboard";
 
@@ -11,6 +9,90 @@ const ALLOWED_NEXT_PATHS = new Set([
   "/update-password",
   "/checkout/premium",
 ]);
+
+const LOCAL_DEVELOPMENT_HOSTS = new Set([
+  "localhost",
+  "127.0.0.1",
+  "[::1]",
+]);
+
+/**
+ * Returns a trusted auth origin. Production accepts only the canonical site.
+ * During local development, explicitly permitted loopback hosts are also accepted.
+ */
+export function getAllowedAuthOrigin(
+  origin: string | null | undefined,
+  allowLocalhost = false
+): string | null {
+  if (!origin || origin.length > 512) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(origin);
+
+    if (
+      parsed.username ||
+      parsed.password ||
+      parsed.pathname !== "/" ||
+      parsed.search ||
+      parsed.hash
+    ) {
+      return null;
+    }
+
+    if (parsed.origin === CANONICAL_SITE_URL) {
+      return CANONICAL_SITE_URL;
+    }
+
+    if (
+      allowLocalhost &&
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      LOCAL_DEVELOPMENT_HOSTS.has(parsed.hostname)
+    ) {
+      return parsed.origin;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Host-header guard for server-rendered authentication pages.
+ * Hostnames are compared against an explicit canonical/loopback allowlist.
+ */
+export function isAllowedAuthHost(
+  host: string | null,
+  allowLocalhost = false
+): boolean {
+  if (
+    !host ||
+    host.length > 255 ||
+    /[\s/@?#\\]/.test(host)
+  ) {
+    return false;
+  }
+
+  return (
+    getAllowedAuthOrigin(`https://${host}`, allowLocalhost) !== null
+  );
+}
+
+/**
+ * Chooses an authentication callback origin without trusting arbitrary hosts.
+ * Unrecognized origins always fall back to the canonical production domain.
+ */
+export function getAuthCallbackOrigin(
+  currentOrigin: string | null | undefined,
+  allowLocalhost = false
+): string {
+  return (
+    getAllowedAuthOrigin(currentOrigin, allowLocalhost) ??
+    CANONICAL_SITE_URL
+  );
+}
 
 /**
  * Accepts only explicitly approved, same-origin post-auth destinations.
@@ -55,8 +137,15 @@ export function getSafeNextPath(value: string | null | undefined): string {
   }
 }
 
-export function getAuthCallbackUrl(nextPath: string): string {
-  const callbackUrl = new URL("/auth/callback", CANONICAL_SITE_URL);
+export function getAuthCallbackUrl(
+  nextPath: string,
+  currentOrigin?: string | null,
+  allowLocalhost = false
+): string {
+  const callbackUrl = new URL(
+    "/auth/callback",
+    getAuthCallbackOrigin(currentOrigin, allowLocalhost)
+  );
   callbackUrl.searchParams.set("next", getSafeNextPath(nextPath));
   return callbackUrl.toString();
 }
