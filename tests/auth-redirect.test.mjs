@@ -33,6 +33,9 @@ const {
   getAuthCallbackUrl,
   getRecoveryCallbackUrl,
   getCanonicalCallbackUrl,
+  getAllowedAuthOrigin,
+  getAuthCallbackOrigin,
+  isAllowedAuthHost,
   isCanonicalSiteHost,
 } = redirectModule;
 const { getAuthCallbackDestination } = callbackModule;
@@ -185,4 +188,79 @@ test("successful recovery preserves update-password as the callback destination"
   assert.equal(destination.pathname, "/update-password");
   assert.equal(destination.search, "");
   assert.equal(destination.hash, "");
+});
+
+
+test("allows only the canonical production host for authentication pages", () => {
+  assert.equal(isAllowedAuthHost("yaju-tools.com", false), true);
+  assert.equal(isAllowedAuthHost("YAJU-TOOLS.COM", false), true);
+  assert.equal(isAllowedAuthHost("yaju-tools.vercel.app", false), false);
+  assert.equal(isAllowedAuthHost("preview.example.com", false), false);
+  assert.equal(isAllowedAuthHost("yaju-tools.com.attacker.example", false), false);
+  assert.equal(isAllowedAuthHost(null, false), false);
+});
+
+test("allows loopback authentication hosts only when local development is enabled", () => {
+  assert.equal(isAllowedAuthHost("localhost:3000", true), true);
+  assert.equal(isAllowedAuthHost("127.0.0.1:3000", true), true);
+  assert.equal(isAllowedAuthHost("[::1]:3000", true), true);
+
+  assert.equal(isAllowedAuthHost("localhost:3000", false), false);
+  assert.equal(isAllowedAuthHost("yaju-tools.vercel.app", true), false);
+  assert.equal(isAllowedAuthHost("attacker.example", true), false);
+  assert.equal(isAllowedAuthHost("localhost:3000/path", true), false);
+});
+
+test("uses a local callback origin only for explicitly allowed loopback origins", () => {
+  assert.equal(
+    getAllowedAuthOrigin("http://localhost:3000", true),
+    "http://localhost:3000"
+  );
+  assert.equal(
+    getAllowedAuthOrigin("http://127.0.0.1:3000", true),
+    "http://127.0.0.1:3000"
+  );
+  assert.equal(
+    getAllowedAuthOrigin("http://localhost:3000", false),
+    null
+  );
+  assert.equal(
+    getAuthCallbackOrigin("https://preview.example.com", true),
+    "https://yaju-tools.com"
+  );
+
+  const localCallback = new URL(
+    getAuthCallbackUrl("/update-password", "http://localhost:3000", true)
+  );
+  assert.equal(localCallback.origin, "http://localhost:3000");
+  assert.equal(localCallback.pathname, "/auth/callback");
+  assert.equal(
+    localCallback.searchParams.get("next"),
+    "/update-password"
+  );
+
+  const previewCallback = new URL(
+    getAuthCallbackUrl(
+      "/update-password",
+      "https://yaju-preview.vercel.app",
+      true
+    )
+  );
+  assert.equal(previewCallback.origin, "https://yaju-tools.com");
+});
+
+test("keeps a localhost callback response on the same local auth origin", async () => {
+  let exchangeCalled = false;
+  const destination = await getAuthCallbackDestination(
+    "http://localhost:3000/auth/callback?code=local-test&next=%2Fupdate-password",
+    async () => {
+      exchangeCalled = true;
+      return { error: null };
+    },
+    "http://localhost:3000"
+  );
+
+  assert.equal(exchangeCalled, true);
+  assert.equal(destination.origin, "http://localhost:3000");
+  assert.equal(destination.pathname, "/update-password");
 });
