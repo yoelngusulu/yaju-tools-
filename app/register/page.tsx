@@ -4,9 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import {
+  getAuthCallbackUrl,
+  getSafeNextPath as validateNextPath,
+} from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
-function getSafeNextPath() {
+function getNextPathFromLocation() {
   if (typeof window === "undefined") {
     return "/dashboard";
   }
@@ -15,15 +19,7 @@ function getSafeNextPath() {
     window.location.search
   ).get("next");
 
-  if (
-    nextPath &&
-    nextPath.startsWith("/") &&
-    !nextPath.startsWith("//")
-  ) {
-    return nextPath;
-  }
-
-  return "/dashboard";
+  return validateNextPath(nextPath);
 }
 
 export default function RegisterPage() {
@@ -41,7 +37,7 @@ export default function RegisterPage() {
   const [loginHref, setLoginHref] = useState("/login");
 
   useEffect(() => {
-    const nextPath = getSafeNextPath();
+    const nextPath = getNextPathFromLocation();
 
     if (nextPath !== "/dashboard") {
       setLoginHref(
@@ -78,7 +74,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const nextPath = getSafeNextPath();
+      const nextPath = getNextPathFromLocation();
       const { data, error: signUpError } =
         await supabase.auth.signUp({
           email: email.trim(),
@@ -87,9 +83,7 @@ export default function RegisterPage() {
             data: {
               full_name: name.trim(),
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-              nextPath
-            )}`,
+            emailRedirectTo: getAuthCallbackUrl(nextPath),
           },
         });
 
