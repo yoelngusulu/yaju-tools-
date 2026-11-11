@@ -32,6 +32,7 @@ test("falls back for external and protocol-relative destinations", () => {
 });
 
 test("rejects slash-backslash and repeated backslash redirect bypasses", () => {
+  assert.equal(getSafeNextPath("/\\example.com"), "/dashboard");
   assert.equal(getSafeNextPath("/\\\\example.com"), "/dashboard");
   assert.equal(getSafeNextPath("/\\\\\\\\example.com"), "/dashboard");
 });
