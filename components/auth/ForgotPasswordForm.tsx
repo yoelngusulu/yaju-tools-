@@ -24,12 +24,16 @@ export default function ForgotPasswordForm() {
     setIsLoading(true);
 
     try {
+      const redirectTo = getAuthCallbackUrl(
+        "/update-password",
+        window.location.origin,
+        process.env.NODE_ENV !== "production"
+      );
+
       const { error: resetError } =
         await supabase.auth.resetPasswordForEmail(
           email.trim(),
-          {
-            redirectTo: getAuthCallbackUrl("/update-password"),
-          }
+          { redirectTo }
         );
 
       if (resetError) {
@@ -75,10 +79,7 @@ export default function ForgotPasswordForm() {
           </div>
         )}
 
-        <form
-          onSubmit={handleReset}
-          className="mt-8 space-y-5"
-        >
+        <form onSubmit={handleReset} className="mt-8 space-y-5">
           <div>
             <label
               htmlFor="email"
@@ -91,9 +92,7 @@ export default function ForgotPasswordForm() {
               id="email"
               type="email"
               value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
               required
@@ -106,9 +105,7 @@ export default function ForgotPasswordForm() {
             disabled={isLoading}
             className="w-full rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading
-              ? "Sending..."
-              : "Send Reset Link"}
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
 
