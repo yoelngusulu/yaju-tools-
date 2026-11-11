@@ -12,6 +12,7 @@ import WaitlistForm from "@/components/WaitlistForm";
 import CallToAction from "@/components/CallToAction";
 import AIAssistant from "@/components/AIAssistant";
 import ConditionalGoogleAd from "@/components/ConditionalGoogleAd";
+import { getRecoveryCallbackUrl } from "@/lib/auth/redirect";
 
 export default async function Home({
   searchParams,
@@ -23,7 +24,7 @@ export default async function Home({
   // Supabase recovery emails can land on the Site URL with a code query parameter
   // when the email template or redirect allow-list overrides redirectTo.
   if (code) {
-    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=/update-password`);
+    redirect(getRecoveryCallbackUrl(code));
   }
 
   return (

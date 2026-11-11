@@ -1,43 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { getSafeNextPath as validateNextPath } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
-function getNextPathFromLocation() {
-  if (typeof window === "undefined") {
-    return "/dashboard";
-  }
-
-  const nextPath = new URLSearchParams(
-    window.location.search
-  ).get("next");
-
-  return validateNextPath(nextPath);
-}
-
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = validateNextPath(searchParams.get("next"));
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [registerHref, setRegisterHref] = useState("/register");
-
-  useEffect(() => {
-    const nextPath = getNextPathFromLocation();
-
-    if (nextPath !== "/dashboard") {
-      setRegisterHref(
-        `/register?next=${encodeURIComponent(nextPath)}`
-      );
-    }
-  }, []);
+  const registerHref =
+    nextPath === "/dashboard"
+      ? "/register"
+      : `/register?next=${encodeURIComponent(nextPath)}`;
 
   const handleLogin = async (
     event: React.FormEvent<HTMLFormElement>
@@ -58,7 +41,7 @@ export default function LoginPage() {
         throw signInError;
       }
 
-      router.push(getNextPathFromLocation());
+      router.push(nextPath);
       router.refresh();
     } catch (loginError) {
       setError(
@@ -167,5 +150,21 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
+          <p role="status" className="text-sm text-gray-600">
+            Loading login…
+          </p>
+        </main>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

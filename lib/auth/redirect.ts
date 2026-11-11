@@ -1,5 +1,9 @@
 export const CANONICAL_SITE_URL = "https://yaju-tools.com";
 
+export function isCanonicalSiteHost(host: string | null): boolean {
+  return host?.toLowerCase() === new URL(CANONICAL_SITE_URL).host;
+}
+
 const DEFAULT_NEXT_PATH = "/dashboard";
 
 const ALLOWED_NEXT_PATHS = new Set([
@@ -55,4 +59,28 @@ export function getAuthCallbackUrl(nextPath: string): string {
   const callbackUrl = new URL("/auth/callback", CANONICAL_SITE_URL);
   callbackUrl.searchParams.set("next", getSafeNextPath(nextPath));
   return callbackUrl.toString();
+}
+
+export function getRecoveryCallbackUrl(code: string): string {
+  const callbackUrl = new URL(
+    getAuthCallbackUrl("/update-password")
+  );
+  callbackUrl.searchParams.set("code", code);
+  return callbackUrl.toString();
+}
+
+export function getCanonicalCallbackUrl(requestUrl: string): URL {
+  const incomingUrl = new URL(requestUrl);
+  const callbackUrl = new URL(
+    getAuthCallbackUrl(
+      getSafeNextPath(incomingUrl.searchParams.get("next"))
+    )
+  );
+  const code = incomingUrl.searchParams.get("code");
+
+  if (code) {
+    callbackUrl.searchParams.set("code", code);
+  }
+
+  return callbackUrl;
 }

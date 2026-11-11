@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import {
   getAuthCallbackUrl,
@@ -10,20 +10,10 @@ import {
 } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/client";
 
-function getNextPathFromLocation() {
-  if (typeof window === "undefined") {
-    return "/dashboard";
-  }
-
-  const nextPath = new URLSearchParams(
-    window.location.search
-  ).get("next");
-
-  return validateNextPath(nextPath);
-}
-
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = validateNextPath(searchParams.get("next"));
   const supabase = createClient();
 
   const [name, setName] = useState("");
@@ -34,17 +24,10 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [loginHref, setLoginHref] = useState("/login");
-
-  useEffect(() => {
-    const nextPath = getNextPathFromLocation();
-
-    if (nextPath !== "/dashboard") {
-      setLoginHref(
-        `/login?next=${encodeURIComponent(nextPath)}`
-      );
-    }
-  }, []);
+  const loginHref =
+    nextPath === "/dashboard"
+      ? "/login"
+      : `/login?next=${encodeURIComponent(nextPath)}`;
 
   const handleRegister = async (
     event: React.FormEvent<HTMLFormElement>
@@ -74,7 +57,6 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const nextPath = getNextPathFromLocation();
       const { data, error: signUpError } =
         await supabase.auth.signUp({
           email: email.trim(),
@@ -255,5 +237,21 @@ export default function RegisterPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-6 py-12">
+          <p role="status" className="text-sm text-gray-600">
+            Loading registration…
+          </p>
+        </main>
+      }
+    >
+      <RegisterPageContent />
+    </Suspense>
   );
 }
