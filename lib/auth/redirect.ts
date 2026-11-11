@@ -1,7 +1,5 @@
 export const CANONICAL_SITE_URL = "https://yaju-tools.com";
 
-const CANONICAL_SITE_HOST = new URL(CANONICAL_SITE_URL).host;
-
 const DEFAULT_NEXT_PATH = "/dashboard";
 
 const ALLOWED_NEXT_PATHS = new Set([
