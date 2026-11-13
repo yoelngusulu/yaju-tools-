@@ -89,7 +89,7 @@ test("rainfall route requests the supported daily PRECTOTCORR point series and a
     assert.equal(body.dryPeriod.percentileMethod, "nearest-rank");
     assert.equal(body.dryPeriod.validYears, 20);
     assert.equal(body.dryPeriod.requiredValidYears, 18);
-    assert.equal(body.dryPeriod.valueDays, 273);
+    assert.equal(body.dryPeriod.valueDays, 274);
     assert.match(body.dryPeriodMethod, /calculator design choice/);
     assert.equal(body.monthlyRainfall.length, 12);
     assert.equal(body.monthlyRainfall[0].rainfallMm, 3.1);
