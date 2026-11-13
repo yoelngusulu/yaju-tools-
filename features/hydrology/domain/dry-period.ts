@@ -162,6 +162,7 @@ export function calculateDesignDryPeriod(
   let runLength = 0;
   let runStartYear = startYear;
   let runEndYear = startYear;
+  let previousDayWasMissing = false;
 
   const closeRun = (endingKnown: boolean) => {
     if (runLength === 0) return;
@@ -197,6 +198,7 @@ export function calculateDesignDryPeriod(
 
     if (rainfall === undefined) {
       closeRun(false);
+      previousDayWasMissing = true;
       continue;
     }
 
@@ -213,6 +215,9 @@ export function calculateDesignDryPeriod(
             year,
             "left-censored-at-period-start"
           );
+        } else if (previousDayWasMissing) {
+          // The spell may have started on the unobserved day immediately before.
+          markCensored(annual, year, year, "interrupted-by-missing-data");
         }
       }
       runLength += 1;
@@ -220,6 +225,8 @@ export function calculateDesignDryPeriod(
     } else {
       closeRun(true);
     }
+
+    previousDayWasMissing = false;
   }
 
   // Do not report a spell that remains dry on the final day: its end is unknown.
