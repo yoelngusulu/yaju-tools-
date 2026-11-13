@@ -1,3 +1,5 @@
+import { calculateDesignDryPeriod } from "@/features/hydrology/domain/dry-period";
+
 const NASA_POWER_BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point";
 const PARAMETER = "PRECTOTCORR";
 const COMMUNITY = "AG";
@@ -189,6 +191,16 @@ export async function GET(request: Request) {
       };
     });
 
+    const dryPeriod = calculateDesignDryPeriod(dailyValues, {
+      startYear: START_YEAR,
+      endYear: END_YEAR,
+      fillValue,
+      thresholdMmPerDay: 1,
+      minimumAnnualCoverageFraction: MIN_VALID_DAYS_FRACTION,
+      minimumValidYearFraction: 0.8,
+      percentile: 90,
+    });
+
     const missingMonths = monthlyRainfall.filter((month) => month.rainfallMm === null);
     if (missingMonths.length > 0) {
       return Response.json(
@@ -233,6 +245,8 @@ export async function GET(request: Request) {
         endYear: END_YEAR,
         annualRainfallMm: Math.round(annualRainfallMm * 10) / 10,
         monthlyRainfall: completeMonths,
+        dryPeriod,
+        dryPeriodMethod: "Annual maximum consecutive dry days (CDD) from daily precipitation below 1 mm/day; the design value is the nearest-rank 90th percentile of valid annual maxima. The 90th percentile is a calculator design choice, not an ETCCDI requirement.",
         requestedCoordinates: { latitude, longitude },
         dataCoordinates: { latitude: gridLatitude, longitude: gridLongitude },
         conversionNote: "Daily PRECTOTCORR rainfall (mm/day) summed to calendar-month totals (mm), then averaged for each calendar month over 2001–2022. Months with less than 90% daily coverage in a year are excluded; each reported monthly average requires at least 80% of the 22 years.",
