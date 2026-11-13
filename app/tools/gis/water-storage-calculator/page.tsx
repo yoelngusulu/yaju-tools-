@@ -512,9 +512,11 @@ export default function WaterStorageCalculatorPage() {
                       setDryPeriodMode("manual");
                     }, "days", {
                       step: "1",
-                      hint: dryPeriodMode === "automatic"
-                        ? "Automatically estimated from the selected site's daily rainfall record. Edit to override."
-                        : "Manual value. Enter a verified dry-period duration when automatic analysis is unavailable or when overriding the estimate.",
+                      hint: !site
+                        ? "Select a site to estimate this from historical daily rainfall, or enter a verified value manually."
+                        : dryPeriodMode === "automatic"
+                          ? "Automatically estimated from the selected site's daily rainfall record. Edit to override."
+                          : "Manual value. Enter a verified dry-period duration when automatic analysis is unavailable or when overriding the estimate.",
                     })}
                     {field("Storage safety allowance", safety, setSafety, "%")}
                   </>
@@ -609,6 +611,11 @@ export default function WaterStorageCalculatorPage() {
                       <p className="mt-1 text-[11px]">You can retry the selected point or enter a verified annual rainfall value manually.</p>
                     </div>
                   )}
+                  {site && dryPeriodError && !rainfallData && (
+                    <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                      {dryPeriodError} Enter a verified value in the Dry period field.
+                    </p>
+                  )}
                   {!site && !rainfallData && (
                     <p className="mt-2">Choose a site on the map to request a rainfall estimate. You can still enter annual rainfall manually.</p>
                   )}
@@ -635,6 +642,7 @@ export default function WaterStorageCalculatorPage() {
                             <p className="mt-1 text-[11px] leading-5 text-slate-600">
                               Annual maximum consecutive dry days (CDD), daily rainfall below {rainfallData.dryPeriod.thresholdMmPerDay} mm/day; nearest-rank {rainfallData.dryPeriod.percentile}th percentile from {rainfallData.dryPeriod.validYears} valid years of {rainfallData.startYear}–{rainfallData.endYear}. Annual coverage requirement: {rainfallData.dryPeriod.minimumAnnualCoveragePercent}%.
                             </p>
+                            <p className="mt-1 text-[11px] leading-5 text-slate-500">{rainfallData.dryPeriodMethod}</p>
                           </>
                         ) : (
                           <p className="mt-1 text-[11px] leading-5 text-amber-800">
