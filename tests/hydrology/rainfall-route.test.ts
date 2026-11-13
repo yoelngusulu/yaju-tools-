@@ -51,6 +51,16 @@ test("rainfall route requests the supported daily PRECTOTCORR point series and a
       startYear: number;
       endYear: number;
       annualRainfallMm: number;
+      dryPeriod: {
+        status: "ready" | "insufficient-data";
+        valueDays: number | null;
+        thresholdMmPerDay: number;
+        percentile: number;
+        percentileMethod: "nearest-rank";
+        validYears: number;
+        requiredValidYears: number;
+      };
+      dryPeriodMethod: string;
       monthlyRainfall: Array<{
         monthNumber: number;
         rainfallMm: number;
@@ -73,6 +83,14 @@ test("rainfall route requests the supported daily PRECTOTCORR point series and a
     assert.equal(body.timeStandard, "UTC");
     assert.equal(body.startYear, 2001);
     assert.equal(body.endYear, 2022);
+    assert.equal(body.dryPeriod.status, "ready");
+    assert.equal(body.dryPeriod.thresholdMmPerDay, 1);
+    assert.equal(body.dryPeriod.percentile, 90);
+    assert.equal(body.dryPeriod.percentileMethod, "nearest-rank");
+    assert.equal(body.dryPeriod.validYears, 20);
+    assert.equal(body.dryPeriod.requiredValidYears, 18);
+    assert.equal(body.dryPeriod.valueDays, 273);
+    assert.match(body.dryPeriodMethod, /calculator design choice/);
     assert.equal(body.monthlyRainfall.length, 12);
     assert.equal(body.monthlyRainfall[0].rainfallMm, 3.1);
     assert.equal(body.monthlyRainfall[0].sampleYears, 22);
