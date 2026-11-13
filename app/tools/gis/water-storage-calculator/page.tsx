@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Calculator, Droplets, Gauge, Sprout } from "lucide-react";
+import { ArrowLeft, Calculator, CloudRain, Droplets, Gauge, MapPinned, Sprout } from "lucide-react";
 import { calculateIrrigationRequirement } from "@/features/hydrology/domain/irrigation";
 import { calculateBoreholePumpSupply } from "@/features/hydrology/domain/pump";
 import { calculateAnnualRainwaterSizing } from "@/features/hydrology/domain/rainwater";
 import { calculateTankCapacity } from "@/features/hydrology/domain/tank";
 import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
+import type { GeographicPoint } from "@/features/hydrology/domain/geometry";
+import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
 
 type Mode = "rainwater" | "pump" | "irrigation" | "dimensions";
 type ResultRow = { id: string; label: string; value: string };
@@ -19,7 +21,43 @@ type Result = {
   rows: ResultRow[];
   note?: string;
 };
-type Calculation = { result: Result; error?: never } | { result?: never; error: string };
+type Calculation =
+  | { result: Result; error?: never; message?: never }
+  | { result?: never; error: string; message?: never }
+  | { result?: never; error?: never; message: string };
+
+type MonthlyRainfall = {
+  month: string;
+  monthNumber: number;
+  rainfallMm: number;
+  sampleYears: number;
+};
+
+type RainfallData = {
+  source: string;
+  parameter: string;
+  community: string;
+  units: string;
+  sourceUnits: string;
+  startYear: number;
+  endYear: number;
+  annualRainfallMm: number;
+  monthlyRainfall: MonthlyRainfall[];
+  requestedCoordinates: GeographicPoint;
+  dataCoordinates: GeographicPoint;
+  conversionNote: string;
+  retrievedAt: string;
+};
+
+const MODES = [
+  { id: "rainwater" as const, label: "Rainwater Harvesting", icon: Droplets },
+  { id: "pump" as const, label: "Borehole & Pump", icon: Gauge },
+  { id: "irrigation" as const, label: "Irrigation Storage", icon: Sprout },
+  { id: "dimensions" as const, label: "Tank Dimensions", icon: Calculator },
+];
+
+const fmt = (value: number, digits = 2) =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 
 const withPrimaryLitres = (
   result: Omit<Result, "primaryLitres">
@@ -28,31 +66,39 @@ const withPrimaryLitres = (
   primaryLitres: cubicMetresToLitres(result.primary),
 });
 
-const fmt = (value: number, digits = 2) =>
-  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
-
 export default function WaterStorageCalculatorPage() {
   const [mode, setMode] = useState<Mode>("rainwater");
+  const [site, setSite] = useState<GeographicPoint | null>(null);
+  const [roofPolygon, setRoofPolygon] = useState<GeographicPoint[]>([]);
   const [roofArea, setRoofArea] = useState("100");
-  const [rainfall, setRainfall] = useState("800");
+  const [roofAreaSource, setRoofAreaSource] = useState<"manual" | "map">("manual");
+
+  const [rainfall, setRainfall] = useState("");
+  const [rainfallMode, setRainfallMode] = useState<"automatic" | "manual">("automatic");
+  const [rainfallData, setRainfallData] = useState<RainfallData | null>(null);
+  const [rainfallLoading, setRainfallLoading] = useState(false);
+  const [rainfallError, setRainfallError] = useState<string | null>(null);
   const [runoff, setRunoff] = useState("0.85");
-  const [collectionEfficiency, setCollectionEfficiency] = useState("");
+  const [collectionEfficiency, setCollectionEfficiency] = useState("90");
   const [people, setPeople] = useState("5");
   const [demand, setDemand] = useState("25");
   const [dryDays, setDryDays] = useState("120");
   const [safety, setSafety] = useState("20");
+
   const [boreholeYield, setBoreholeYield] = useState("");
   const [pumpRatedDischarge, setPumpRatedDischarge] = useState("4.5");
   const [actualDischarge, setActualDischarge] = useState("");
   const [pumpHours, setPumpHours] = useState("8");
   const [pumpDemand, setPumpDemand] = useState("30");
   const [reserveDays, setReserveDays] = useState("1");
+
   const [area, setArea] = useState("1");
   const [eto, setEto] = useState("5");
   const [kc, setKc] = useState("1.0");
   const [effectiveRain, setEffectiveRain] = useState("1");
   const [efficiency, setEfficiency] = useState("80");
   const [interval, setInterval] = useState("3");
+
   const [shape, setShape] = useState<"cylindrical" | "rectangular">("cylindrical");
   const [diameter, setDiameter] = useState("4");
   const [height, setHeight] = useState("3");
@@ -61,12 +107,64 @@ export default function WaterStorageCalculatorPage() {
   const [freeboardHeight, setFreeboardHeight] = useState("");
   const [deadStorage, setDeadStorage] = useState("");
 
+  useEffect(() => {
+    if (!site || rainfallMode !== "automatic") {
+      setRainfallLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function loadRainfall() {
+      setRainfallLoading(true);
+      setRainfallError(null);
+      try {
+        const query = new URLSearchParams({
+          latitude: String(site!.latitude),
+          longitude: String(site!.longitude),
+        });
+        const response = await fetch(`/api/climate/rainfall?${query.toString()}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "Rainfall data could not be retrieved.");
+        }
+        if (cancelled) return;
+        const data = payload as RainfallData;
+        setRainfallData(data);
+        setRainfall(String(data.annualRainfallMm));
+        setRainfallError(null);
+      } catch (error) {
+        if (cancelled || (error instanceof Error && error.name === "AbortError")) return;
+        setRainfallError(
+          error instanceof Error
+            ? error.message
+            : "Rainfall data could not be retrieved. Enter a known annual rainfall value manually."
+        );
+      } finally {
+        if (!cancelled) setRainfallLoading(false);
+      }
+    }
+
+    void loadRainfall();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [site, rainfallMode]);
+
   const calculation = useMemo<Calculation>(() => {
     try {
-      const value = (input: string, label: string) =>
-        parseFiniteInput(input, label);
+      const value = (input: string, label: string) => parseFiniteInput(input, label);
 
       if (mode === "rainwater") {
+        if (!rainfall.trim()) {
+          return {
+            message: "Select a site on the map to retrieve rainfall, or enter annual rainfall manually.",
+          };
+        }
         const result = calculateAnnualRainwaterSizing({
           rainfallMm: value(rainfall, "Annual rainfall"),
           catchmentAreaM2: value(roofArea, "Catchment / roof area"),
@@ -77,24 +175,21 @@ export default function WaterStorageCalculatorPage() {
           dryPeriodDays: value(dryDays, "Dry period"),
           safetyAllowancePercent: value(safety, "Storage safety allowance"),
         });
-
         return {
           result: withPrimaryLitres({
             primary: result.recommendedStorageM3,
             primaryLabel: "Recommended storage estimate",
             rows: [
-              { id: "annual-harvest", label: "Annual harvest potential", value: `${fmt(result.annualInflowM3)} m³` },
+              { id: "annual-harvest", label: "Annual harvest potential", value: `${fmt(result.annualInflowM3)} m³/year` },
               { id: "daily-demand", label: "Daily demand", value: `${fmt(result.dailyDemandLitres, 0)} L/day` },
               { id: "dry-period-demand", label: "Dry-period demand", value: `${fmt(result.dryPeriodDemandM3)} m³` },
               {
                 id: "annual-inflow-storage-ratio",
                 label: "Annual inflow / storage ratio",
-                value: result.annualInflowToStorageRatio === null
-                  ? "—"
-                  : `${fmt(result.annualInflowToStorageRatio)}×`,
+                value: result.annualInflowToStorageRatio === null ? "—" : `${fmt(result.annualInflowToStorageRatio)}×`,
               },
             ],
-            note: "Annual yield is a potential estimate; storage sizing uses the entered dry-period demand and safety allowance, not a daily rainfall simulation.",
+            note: "Annual harvest is a potential estimate. Recommended storage is based on entered dry-period demand and safety allowance, not a daily rainfall simulation.",
           }),
         };
       }
@@ -111,7 +206,6 @@ export default function WaterStorageCalculatorPage() {
           dailyDemandM3: value(pumpDemand, "Daily water demand"),
           reserveDays: value(reserveDays, "Reserve storage days"),
         });
-
         return {
           result: withPrimaryLitres({
             primary: result.reserveRequirementM3,
@@ -123,7 +217,7 @@ export default function WaterStorageCalculatorPage() {
               { id: "daily-deficit", label: "Daily supply deficit", value: `${fmt(result.dailyDeficitM3)} m³/day` },
             ],
             note: result.usesRatedDischargeEstimate
-              ? "Production uses the pump-rated discharge as an estimate because actual operating discharge was not entered. Sustainable borehole yield remains a separate limiting input."
+              ? "Production uses pump-rated discharge as an estimate because actual operating discharge was not entered. Sustainable borehole yield remains a separate limiting input."
               : "Production is limited by measured sustainable borehole yield, pump rating, and entered actual operating discharge.",
           }),
         };
@@ -138,7 +232,6 @@ export default function WaterStorageCalculatorPage() {
           irrigatedAreaHa: value(area, "Irrigated area"),
           irrigationIntervalDays: value(interval, "Irrigation interval"),
         });
-
         return {
           result: withPrimaryLitres({
             primary: result.intervalStorageM3,
@@ -150,7 +243,7 @@ export default function WaterStorageCalculatorPage() {
               { id: "gross-irrigation", label: "Gross irrigation depth", value: `${fmt(result.grossIrrigationMmPerDay)} mm/day` },
               { id: "gross-demand", label: "Gross water demand", value: `${fmt(result.grossDemandM3PerDay)} m³/day` },
             ],
-            note: "ETo and effective rainfall are manual inputs. This calculation does not fetch climate data or simulate soil-water storage.",
+            note: "ETo and effective rainfall are manual inputs. Irrigation climate-data integration is not included in this update.",
           }),
         };
       }
@@ -162,18 +255,13 @@ export default function WaterStorageCalculatorPage() {
       };
       const result =
         shape === "cylindrical"
-          ? calculateTankCapacity({
-              ...tankInputs,
-              shape,
-              diameterM: value(diameter, "Tank diameter"),
-            })
+          ? calculateTankCapacity({ ...tankInputs, shape, diameterM: value(diameter, "Tank diameter") })
           : calculateTankCapacity({
               ...tankInputs,
               shape,
               lengthM: value(length, "Tank length"),
               widthM: value(width, "Tank width"),
             });
-
       return {
         result: withPrimaryLitres({
           primary: result.usableStorageM3,
@@ -185,184 +273,309 @@ export default function WaterStorageCalculatorPage() {
             { id: "dead-storage", label: "Dead storage", value: `${fmt(result.deadStorageM3)} m³` },
             { id: "usable-storage-m3", label: "Usable storage", value: `${fmt(result.usableStorageM3)} m³` },
             { id: "usable-storage-litres", label: "Usable storage", value: `${fmt(result.usableStorageLitres, 0)} litres` },
-            { id: "tank-type", label: "Tank type", value: shape === "cylindrical" ? "Cylindrical" : "Rectangular" },
+            { id: "tank-type", label: "Tank type", value: shape === "cylindrical" ? "Vertical cylindrical tank" : "Rectangular tank" },
           ],
         }),
       };
     } catch (error) {
       return {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Check the entered values and try again.",
+        error: error instanceof Error ? error.message : "Check the entered values and try again.",
       };
     }
   }, [
-    mode,
-    roofArea,
-    rainfall,
-    runoff,
-    collectionEfficiency,
-    people,
-    demand,
-    dryDays,
-    safety,
-    boreholeYield,
-    pumpRatedDischarge,
-    actualDischarge,
-    pumpHours,
-    pumpDemand,
-    reserveDays,
-    area,
-    eto,
-    kc,
-    effectiveRain,
-    efficiency,
-    interval,
-    shape,
-    diameter,
-    height,
-    length,
-    width,
-    freeboardHeight,
-    deadStorage,
+    mode, roofArea, rainfall, runoff, collectionEfficiency, people, demand, dryDays,
+    safety, boreholeYield, pumpRatedDischarge, actualDischarge, pumpHours, pumpDemand,
+    reserveDays, area, eto, kc, effectiveRain, efficiency, interval, shape, diameter,
+    height, length, width, freeboardHeight, deadStorage,
   ]);
-
-  const modes = [
-    { id: "rainwater" as const, label: "Rainwater Harvesting", icon: Droplets },
-    { id: "pump" as const, label: "Borehole & Pump", icon: Gauge },
-    { id: "irrigation" as const, label: "Irrigation Storage", icon: Sprout },
-    { id: "dimensions" as const, label: "Tank Dimensions", icon: Calculator },
-  ];
 
   const field = (
     label: string,
     value: string,
     setter: (value: string) => void,
     unit: string,
-    step = "any",
-    min = "0",
-    max?: string
+    options?: { step?: string; min?: string; max?: string; hint?: string }
   ) => (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-gray-700">{label}</span>
-      <div className="flex overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+    <label className="block min-w-0">
+      <span className="mb-1.5 block text-sm font-semibold text-slate-800">{label}</span>
+      <div className="flex min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
         <input
           type="number"
-          min={min}
-          max={max}
-          step={step}
+          min={options?.min ?? "0"}
+          max={options?.max}
+          step={options?.step ?? "any"}
           value={value}
           onChange={(event) => setter(event.target.value)}
-          className="min-w-0 flex-1 px-4 py-3 outline-none"
+          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-900 outline-none"
         />
-        <span className="flex items-center border-l border-gray-200 bg-gray-50 px-3 text-sm text-gray-500">
-          {unit}
-        </span>
+        <span className="flex shrink-0 items-center border-l border-slate-200 bg-slate-50 px-3 text-xs text-slate-500">{unit}</span>
       </div>
+      {options?.hint && <span className="mt-1 block text-xs leading-5 text-slate-500">{options.hint}</span>}
     </label>
   );
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-5 py-12">
-      <div className="mx-auto max-w-6xl">
-        <Link href="/tools/gis" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50">
-          <ArrowLeft size={16} />Back to YAJU Field Tools
-        </Link>
-        <div className="mt-5 max-w-4xl">
-          <p className="text-sm font-bold uppercase tracking-wider text-blue-600">YAJU Field Tools</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-950 md:text-5xl">Water Storage & Tank Sizing Calculator</h1>
-          <p className="mt-4 text-lg leading-8 text-gray-600">Estimate storage for rainwater harvesting, borehole and pumping systems, irrigation demand, or calculate physical tank capacity.</p>
-        </div>
+  const selectSite = (point: GeographicPoint) => {
+    setSite(point);
+    setRainfall("");
+    setRainfallMode("automatic");
+    setRainfallData(null);
+    setRainfallError(null);
+  };
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {modes.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" onClick={() => setMode(id)} className={`flex items-center gap-3 rounded-xl border p-4 text-left font-semibold transition ${mode === id ? "border-blue-600 bg-blue-600 text-white shadow-sm" : "border-gray-200 bg-white text-gray-700 hover:border-blue-300"}`}>
-              <Icon size={20} /> {label}
+  const calculatedResult = calculation.result;
+
+  return (
+    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1500px]">
+        <Link
+          href="/tools/gis"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
+        >
+          <ArrowLeft size={16} />
+          Back to GIS Tools
+        </Link>
+
+        <header className="mt-6 border-b border-slate-200 pb-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">YAJU Hydrology Tools</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">WATER STORAGE CALCULATOR</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+            Estimate rainwater harvesting, borehole supply, irrigation storage and tank capacity.
+            Select a project site to load a rainfall estimate, or enter your own verified value.
+          </p>
+        </header>
+
+        <nav className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Calculator mode">
+          {MODES.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setMode(id)}
+              aria-pressed={mode === id}
+              className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-3 py-3 text-left text-sm font-semibold transition ${mode === id
+                ? "border-blue-700 bg-blue-700 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"}`}
+            >
+              <Icon size={18} />
+              <span>{label}</span>
             </button>
           ))}
-        </div>
+        </nav>
 
-        <div className="mt-7 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
-            <h2 className="text-xl font-bold text-gray-900">Design inputs</h2>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              {mode === "rainwater" && <>
-                {field("Catchment / roof area", roofArea, setRoofArea, "m²")}
-                {field("Annual rainfall", rainfall, setRainfall, "mm")}
-                {field("Runoff coefficient", runoff, setRunoff, "0–1", "any", "0", "1")}
-                {field("Collection efficiency", collectionEfficiency, setCollectionEfficiency, "%", "any", "0", "100")}
-                {field("Number of users", people, setPeople, "people", "1")}
-                {field("Water demand per person", demand, setDemand, "L/p/d")}
-                {field("Dry period", dryDays, setDryDays, "days", "1")}
-                {field("Storage safety allowance", safety, setSafety, "%")}
-              </>}
-              {mode === "pump" && <>
-                {field("Measured sustainable borehole yield", boreholeYield, setBoreholeYield, "m³/hr")}
-                {field("Pump-rated discharge", pumpRatedDischarge, setPumpRatedDischarge, "m³/hr")}
-                {field("Actual operating discharge (optional)", actualDischarge, setActualDischarge, "m³/hr")}
-                {field("Pumping hours per day", pumpHours, setPumpHours, "hr/day", "any", "0", "24")}
-                {field("Daily water demand", pumpDemand, setPumpDemand, "m³/day")}
-                {field("Reserve storage", reserveDays, setReserveDays, "days")}
-              </>}
-              {mode === "irrigation" && <>
-                {field("Irrigated area", area, setArea, "ha")}
-                {field("Reference ET (ETo)", eto, setEto, "mm/day")}
-                {field("Crop coefficient (Kc)", kc, setKc, "Kc")}
-                {field("Effective rainfall", effectiveRain, setEffectiveRain, "mm/day")}
-                {field("Irrigation efficiency", efficiency, setEfficiency, "%", "any", "0.01", "100")}
-                {field("Irrigation interval", interval, setInterval, "days", "1", "0.01")}
-              </>}
-              {mode === "dimensions" && <>
-                <label className="block sm:col-span-2">
-                  <span className="mb-2 block text-sm font-semibold text-gray-700">Tank shape</span>
-                  <select value={shape} onChange={(event) => setShape(event.target.value as "cylindrical" | "rectangular")} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-blue-500">
-                    <option value="cylindrical">Cylindrical</option>
-                    <option value="rectangular">Rectangular</option>
-                  </select>
-                </label>
-                {shape === "cylindrical"
-                  ? field("Diameter", diameter, setDiameter, "m", "any", "0.01")
-                  : <>{field("Length", length, setLength, "m", "any", "0.01")}{field("Width", width, setWidth, "m", "any", "0.01")}</>}
-                {field("Tank height", height, setHeight, "m", "any", "0.01")}
-                {field("Freeboard height", freeboardHeight, setFreeboardHeight, "m")}
-                {field("Dead storage", deadStorage, setDeadStorage, "m³")}
-              </>}
+        <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(370px,0.92fr)_minmax(520px,1.08fr)]">
+          <section className="min-w-0 space-y-5">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">Design parameters</h2>
+                  <p className="mt-1 text-xs text-slate-500">Enter or confirm the values used in the calculation.</p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Inputs</span>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {mode === "rainwater" && (
+                  <>
+                    {field("Roof / catchment area", roofArea, (value) => {
+                      setRoofArea(value);
+                      setRoofAreaSource("manual");
+                    }, "m²", {
+                      min: "0.01",
+                      hint: roofAreaSource === "map"
+                        ? "Calculated from the roof outline drawn on the map. You can edit this value."
+                        : "Enter the roof plan area, or draw its outline on the map.",
+                    })}
+                    {field("Annual rainfall", rainfall, (value) => {
+                      setRainfall(value);
+                      setRainfallMode("manual");
+                    }, "mm/year", {
+                      hint: rainfallMode === "automatic"
+                        ? "Filled from NASA POWER after a site is selected. Editable at any time."
+                        : "Manual value. Use a verified annual total for the project location.",
+                    })}
+                    {field("Runoff coefficient", runoff, setRunoff, "0–1", {
+                      min: "0",
+                      max: "1",
+                      hint: "Represents the share of rainfall converted to roof runoff. Adjust for roof material and condition.",
+                    })}
+                    {field("Collection efficiency", collectionEfficiency, setCollectionEfficiency, "%", {
+                      min: "0.01",
+                      max: "100",
+                      hint: "Editable 90% planning assumption for conveyance and first-flush/storage losses. Avoid double-counting losses in the runoff coefficient.",
+                    })}
+                    {field("Number of users", people, setPeople, "people", { step: "1", min: "0" })}
+                    {field("Daily water demand per person", demand, setDemand, "L/person/day")}
+                    {field("Dry period", dryDays, setDryDays, "days", { step: "1" })}
+                    {field("Storage safety allowance", safety, setSafety, "%")}
+                  </>
+                )}
+
+                {mode === "pump" && (
+                  <>
+                    {field("Measured sustainable borehole yield", boreholeYield, setBoreholeYield, "m³/hour")}
+                    {field("Pump-rated discharge", pumpRatedDischarge, setPumpRatedDischarge, "m³/hour")}
+                    {field("Actual operating discharge (optional)", actualDischarge, setActualDischarge, "m³/hour")}
+                    {field("Pumping hours per day", pumpHours, setPumpHours, "hours/day", { min: "0", max: "24" })}
+                    {field("Daily water demand", pumpDemand, setPumpDemand, "m³/day")}
+                    {field("Reserve storage period", reserveDays, setReserveDays, "days")}
+                  </>
+                )}
+
+                {mode === "irrigation" && (
+                  <>
+                    {field("Irrigated area", area, setArea, "ha", { min: "0.01" })}
+                    {field("Reference evapotranspiration (ETo)", eto, setEto, "mm/day")}
+                    {field("Crop coefficient (Kc)", kc, setKc, "Kc")}
+                    {field("Effective rainfall", effectiveRain, setEffectiveRain, "mm/day")}
+                    {field("Irrigation efficiency", efficiency, setEfficiency, "%", { min: "0.01", max: "100" })}
+                    {field("Irrigation interval", interval, setInterval, "days", { min: "0.01" })}
+                  </>
+                )}
+
+                {mode === "dimensions" && (
+                  <>
+                    <label className="block sm:col-span-2">
+                      <span className="mb-1.5 block text-sm font-semibold text-slate-800">Tank geometry</span>
+                      <select
+                        value={shape}
+                        onChange={(event) => setShape(event.target.value as "cylindrical" | "rectangular")}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="cylindrical">Vertical cylindrical tank</option>
+                        <option value="rectangular">Rectangular tank</option>
+                      </select>
+                    </label>
+                    {shape === "cylindrical"
+                      ? field("Tank diameter", diameter, setDiameter, "m", { min: "0.01" })
+                      : <>
+                          {field("Tank length", length, setLength, "m", { min: "0.01" })}
+                          {field("Tank width", width, setWidth, "m", { min: "0.01" })}
+                        </>}
+                    {field("Tank height", height, setHeight, "m", { min: "0.01" })}
+                    {field("Freeboard height", freeboardHeight, setFreeboardHeight, "m")}
+                    {field("Dead storage", deadStorage, setDeadStorage, "m³")}
+                  </>
+                )}
+              </div>
+
+              {mode === "rainwater" && (
+                <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-xs leading-5 text-blue-950">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <CloudRain size={15} />
+                    Rainfall data
+                    {rainfallLoading && <span className="font-normal text-blue-700">Loading estimate…</span>}
+                    {!rainfallLoading && rainfallData && rainfallMode === "automatic" && (
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-green-700">AUTO</span>
+                    )}
+                    {rainfallMode === "manual" && (
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">MANUAL</span>
+                    )}
+                  </div>
+                  {rainfallError && <p role="alert" className="mt-2 text-rose-700">{rainfallError}</p>}
+                  {!site && !rainfallData && (
+                    <p className="mt-2">Choose a site on the map to request a rainfall estimate. You can still enter annual rainfall manually.</p>
+                  )}
+                  {rainfallData && (
+                    <>
+                      <p className="mt-2">
+                        {rainfallData.source}, {rainfallData.parameter}; monthly climate reference {rainfallData.startYear}–{rainfallData.endYear}.
+                        Selected grid: {rainfallData.dataCoordinates.latitude.toFixed(3)}°, {rainfallData.dataCoordinates.longitude.toFixed(3)}°.
+                      </p>
+                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {rainfallData.monthlyRainfall.map((month) => (
+                          <div key={month.monthNumber} className="rounded-lg border border-blue-100 bg-white px-2 py-2">
+                            <div className="text-[10px] font-semibold text-slate-500">{month.month}</div>
+                            <div className="mt-0.5 text-sm font-bold tabular-nums text-slate-900">{fmt(month.rainfallMm, 1)}</div>
+                            <div className="text-[10px] text-slate-500">mm/month</div>
+                          </div>
+                        ))}
+                      </div>
+                      {rainfallMode === "manual" && (
+                        <p className="mt-2 text-slate-600">NASA POWER values remain visible as a reference; your manually entered annual rainfall is used.</p>
+                      )}
+                      <p className="mt-2 text-[11px] text-slate-600">
+                        Gridded estimate, not a rain-gauge observation. Retrieved {new Date(rainfallData.retrievedAt).toLocaleDateString("en-GB")}.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            {mode === "rainwater" && (
-              <p className="mt-5 text-sm leading-6 text-gray-600">
-                Runoff coefficient estimates the share of rainfall that runs off the catchment. Collection efficiency accounts for conveyance and storage losses after runoff. Keep the two factors separate and avoid counting the same loss in both.
-              </p>
-            )}
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-live="polite">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-950">Calculated results</h2>
+                  <p className="mt-1 text-xs text-slate-500">Results update automatically when parameters change.</p>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Live calculation</span>
+              </div>
+
+              {calculation.message ? (
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                  {calculation.message}
+                </p>
+              ) : calculation.error ? (
+                <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-800">
+                  Check your inputs: {calculation.error}
+                </p>
+              ) : calculatedResult ? (
+                <>
+                  <p className="mt-5 text-sm font-medium text-slate-600">{calculatedResult.primaryLabel}</p>
+                  <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="text-4xl font-extrabold tracking-tight text-blue-700">{fmt(calculatedResult.primary)} m³</span>
+                    <span className="text-sm font-semibold text-slate-500">{fmt(calculatedResult.primaryLitres, 0)} litres</span>
+                  </div>
+                  <div className="mt-5 divide-y divide-slate-100 border-y border-slate-100">
+                    {calculatedResult.rows.map(({ id, label, value }) => (
+                      <div key={id} className="flex items-start justify-between gap-4 py-3 text-sm">
+                        <span className="text-slate-600">{label}</span>
+                        <strong className="text-right text-slate-900">{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  {calculatedResult.note && <p className="mt-4 text-xs leading-5 text-slate-500">{calculatedResult.note}</p>}
+                </>
+              ) : null}
+            </section>
           </section>
 
-          <aside className="rounded-2xl bg-blue-600 p-6 text-white shadow-sm md:p-8" aria-live="polite">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-100">Calculated result</p>
-            {calculation.error ? (
-              <p role="alert" className="mt-5 rounded-lg bg-white/10 p-4 text-sm leading-6">
-                Check your inputs: {calculation.error}
-              </p>
-            ) : calculation.result ? (
-              <>
-                <p className="mt-5 text-sm text-blue-100">{calculation.result.primaryLabel}</p>
-                <div className="mt-1 text-4xl font-bold">{fmt(calculation.result.primary)} m³</div>
-                <div className="mt-1 text-blue-100">{fmt(calculation.result.primaryLitres, 0)} litres</div>
-                <div className="mt-7 space-y-3 border-t border-white/20 pt-5">
-                  {calculation.result.rows.map(({ id, label, value }) => (
-                    <div key={id} className="flex items-start justify-between gap-4 text-sm">
-                      <span className="text-blue-100">{label}</span>
-                      <strong className="text-right">{value}</strong>
-                    </div>
-                  ))}
-                </div>
-                {calculation.result.note && <p className="mt-5 border-t border-white/20 pt-4 text-sm leading-6 text-blue-100">{calculation.result.note}</p>}
-              </>
-            ) : null}
+          <aside className="min-w-0 xl:sticky xl:top-24">
+            <WaterStorageMapPreview
+              site={site}
+              roofPolygon={roofPolygon}
+              roofAreaM2={roofAreaSource === "map" ? Number(roofArea) : null}
+              onSiteSelect={selectSite}
+              onRoofComplete={(areaM2, points) => {
+                setRoofPolygon(points);
+                setRoofArea(String(Number(areaM2.toFixed(1))));
+                setRoofAreaSource("map");
+              }}
+              onRoofClear={() => {
+                setRoofPolygon([]);
+                setRoofAreaSource("manual");
+              }}
+            />
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-600">
+              <div className="flex items-center gap-2 font-semibold text-slate-800">
+                <MapPinned size={15} className="text-blue-600" />
+                Site and roof summary
+              </div>
+              {site ? (
+                <p className="mt-2">
+                  Site coordinates: {site.latitude.toFixed(5)}°, {site.longitude.toFixed(5)}°.
+                  {rainfallData && <> Rainfall grid point: {rainfallData.dataCoordinates.latitude.toFixed(3)}°, {rainfallData.dataCoordinates.longitude.toFixed(3)}°.</>}
+                </p>
+              ) : (
+                <p className="mt-2">No site selected. Select “Select site” above the map, then click the project location.</p>
+              )}
+              <p className="mt-2">Roof area: {roofAreaSource === "map" ? "map outline" : "manual input"}; {roofArea || "not entered"} m².</p>
+            </div>
           </aside>
         </div>
 
-        <section className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-          <strong>Engineering note:</strong> This calculator provides preliminary sizing estimates. The rainwater storage balance is a monthly approximation when used with monthly values and does not model within-month dry spells. Final tank and water-supply design should use site-specific rainfall, demand, measured source yield, operating pattern, crop and hydraulic data and should be checked against applicable engineering standards.
+        <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950 sm:p-5">
+          <strong>Engineering and data note:</strong> This calculator provides preliminary sizing estimates. NASA POWER rainfall is a gridded climate estimate and may differ from a local rain gauge. Roof area drawn on the map is a horizontal plan-area estimate; verify it against roof geometry and actual measurements. Rainwater sizing uses annual rainfall and dry-period demand, not a daily rainfall-runoff simulation. Confirm site-specific inputs and applicable engineering standards before final design.
         </section>
       </div>
     </main>

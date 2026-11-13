@@ -374,3 +374,31 @@ test("rectangular tank computes usable volume and rejects impossible deductions"
     /Dead storage cannot exceed/
   );
 });
+
+
+test("spherical polygon area converts a small WGS 84 roof footprint to square metres", async () => {
+  const { calculateSphericalPolygonAreaM2 } = await import("../../features/hydrology/domain/geometry");
+  const area = calculateSphericalPolygonAreaM2([
+    { latitude: -6.8, longitude: 39.2 },
+    { latitude: -6.8, longitude: 39.201 },
+    { latitude: -6.799, longitude: 39.201 },
+    { latitude: -6.799, longitude: 39.2 },
+  ]);
+
+  assert.ok(area > 12_000 && area < 13_000, `unexpected footprint area: ${area}`);
+  assert.throws(
+    () => calculateSphericalPolygonAreaM2([
+      { latitude: -6.8, longitude: 39.2 },
+      { latitude: -6.8, longitude: 39.201 },
+    ]),
+    /at least three vertices/
+  );
+  assert.throws(
+    () => calculateSphericalPolygonAreaM2([
+      { latitude: -6.8, longitude: 39.2 },
+      { latitude: -6.8, longitude: 39.201 },
+      { latitude: 91, longitude: 39.2 },
+    ]),
+    /valid WGS 84 coordinates/
+  );
+});
