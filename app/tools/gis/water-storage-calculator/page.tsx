@@ -598,6 +598,7 @@ export default function WaterStorageCalculatorPage() {
               }}
               onCatchmentClear={() => {
                 setCatchmentPolygon([]);
+                setCatchmentArea("");
                 setCatchmentAreaSource("manual");
               }}
             />
