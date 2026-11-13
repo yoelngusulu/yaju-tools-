@@ -22,14 +22,16 @@ test("rainfall route requests the supported daily PRECTOTCORR point series and a
     }
   }
 
+  dailyValues["20220331"] = -999; // NASA POWER header fill value must not be treated as rainfall.
+
   globalThis.fetch = async (input) => {
     requestedUrls.push(new URL(String(input)));
     return new Response(JSON.stringify({
+      header: { fill_value: -999 },
       parameters: {
         PRECTOTCORR: {
           units: "mm/day",
           longname: "Bias-corrected precipitation",
-          fill_value: -999,
         },
       },
       properties: { parameter: { PRECTOTCORR: dailyValues } },

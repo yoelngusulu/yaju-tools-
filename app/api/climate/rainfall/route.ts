@@ -14,7 +14,7 @@ const MONTHS = [
 
 type PowerPayload = {
   messages?: string[];
-  header?: { title?: string };
+  header?: { title?: string; fill_value?: number };
   geometry?: { coordinates?: number[] };
   parameters?: Record<string, { units?: string; longname?: string; fill_value?: number }>;
   properties?: {
@@ -126,7 +126,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const fillValue = payload?.parameters?.[PARAMETER]?.fill_value;
+    const fillValue =
+      payload?.header?.fill_value ?? payload?.parameters?.[PARAMETER]?.fill_value;
     for (const [dateKey, rawValue] of Object.entries(dailyValues)) {
       if (!/^\d{8}$/.test(dateKey)) continue;
 
