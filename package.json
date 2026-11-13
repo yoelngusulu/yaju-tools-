@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run test:hydrology && npx eslint features/hydrology/domain/dry-period.ts app/api/climate/rainfall/route.ts app/tools/gis/water-storage-calculator/page.tsx tests/hydrology/dry-period.test.ts tests/hydrology/rainfall-route.test.ts tests/hydrology/domain.test.ts && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:hydrology": "tsx --test tests/hydrology/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -34,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
