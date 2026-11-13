@@ -140,7 +140,6 @@ export default function WaterStorageCalculatorPage() {
 
   useEffect(() => {
     if (!site || rainfallMode !== "automatic") {
-      setRainfallLoading(false);
       return;
     }
 
@@ -361,6 +360,7 @@ export default function WaterStorageCalculatorPage() {
   );
 
   const selectSite = (point: GeographicPoint) => {
+    setRainfallLoading(false);
     setSite(point);
     setCoordinateX(String(point.longitude));
     setCoordinateY(String(point.latitude));
@@ -489,6 +489,7 @@ export default function WaterStorageCalculatorPage() {
                     })}
                     {field("Annual rainfall", rainfall, (value) => {
                       setRainfall(value);
+                      setRainfallLoading(false);
                       setRainfallMode("manual");
                     }, "mm/year", {
                       hint: rainfallMode === "automatic"
@@ -650,7 +651,7 @@ export default function WaterStorageCalculatorPage() {
                           </p>
                         )}
                         <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                          CDD spells crossing a calendar year are assigned to the year in which the spell ends. The 90th percentile is the calculator's selected design statistic, not an ETCCDI requirement.
+                          CDD spells crossing a calendar year are assigned to the year in which the spell ends. The 90th percentile is the calculator&apos;s selected design statistic, not an ETCCDI requirement.
                         </p>
                       </div>
                       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
