@@ -82,6 +82,7 @@ export default function WaterStorageCalculatorPage() {
   const [rainfallData, setRainfallData] = useState<RainfallData | null>(null);
   const [rainfallLoading, setRainfallLoading] = useState(false);
   const [rainfallError, setRainfallError] = useState<string | null>(null);
+  const [rainfallRequestVersion, setRainfallRequestVersion] = useState(0);
   const [runoff, setRunoff] = useState("0.85");
   const [collectionEfficiency, setCollectionEfficiency] = useState("90");
   const [people, setPeople] = useState("5");
@@ -157,7 +158,7 @@ export default function WaterStorageCalculatorPage() {
       cancelled = true;
       controller.abort();
     };
-  }, [site, rainfallMode]);
+  }, [site, rainfallMode, rainfallRequestVersion]);
 
   const calculation = useMemo<Calculation>(() => {
     try {
@@ -339,6 +340,15 @@ export default function WaterStorageCalculatorPage() {
     }
   };
 
+  const requestRainfallForSelectedSite = () => {
+    if (!site || rainfallLoading) return;
+    setRainfallError(null);
+    setRainfallData(null);
+    setRainfall("");
+    setRainfallMode("automatic");
+    setRainfallRequestVersion((version) => version + 1);
+  };
+
   const calculatedResult = calculation.result;
 
   return (
@@ -505,9 +515,10 @@ export default function WaterStorageCalculatorPage() {
 
               {mode === "rainwater" && (
                 <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-xs leading-5 text-blue-950">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <CloudRain size={15} />
-                    Rainfall data
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <CloudRain size={15} />
+                      Rainfall data
                     {rainfallLoading && <span className="font-normal text-blue-700">Loading estimate…</span>}
                     {!rainfallLoading && rainfallData && rainfallMode === "automatic" && (
                       <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-green-700">AUTO</span>
@@ -515,15 +526,41 @@ export default function WaterStorageCalculatorPage() {
                     {rainfallMode === "manual" && (
                       <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">MANUAL</span>
                     )}
+                    </div>
+                    {site && (
+                      <button
+                        type="button"
+                        onClick={requestRainfallForSelectedSite}
+                        disabled={rainfallLoading}
+                        className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {rainfallLoading
+                          ? "Fetching rainfall…"
+                          : rainfallData && rainfallMode === "automatic"
+                            ? "Refresh rainfall at point"
+                            : "Fetch rainfall for selected point"}
+                      </button>
+                    )}
                   </div>
-                  {rainfallError && <p role="alert" className="mt-2 text-rose-700">{rainfallError}</p>}
+                  {site && (
+                    <p className="mt-2 text-[11px] text-slate-600">
+                      Selected point: {site.latitude.toFixed(5)}° latitude, {site.longitude.toFixed(5)}° longitude.
+                      {rainfallLoading ? " Requesting daily precipitation data from NASA POWER…" : ""}
+                    </p>
+                  )}
+                  {rainfallError && (
+                    <div role="alert" className="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-rose-800">
+                      <p>{rainfallError}</p>
+                      <p className="mt-1 text-[11px]">You can retry the selected point or enter a verified annual rainfall value manually.</p>
+                    </div>
+                  )}
                   {!site && !rainfallData && (
                     <p className="mt-2">Choose a site on the map to request a rainfall estimate. You can still enter annual rainfall manually.</p>
                   )}
                   {rainfallData && (
                     <>
                       <p className="mt-2">
-                        {rainfallData.source}, {rainfallData.parameter}; monthly climate reference {rainfallData.startYear}–{rainfallData.endYear}.
+                        {rainfallData.source}, {rainfallData.parameter}; daily climate record {rainfallData.startYear}–{rainfallData.endYear}, aggregated to monthly averages.
                         Selected grid: {rainfallData.dataCoordinates.latitude.toFixed(3)}°, {rainfallData.dataCoordinates.longitude.toFixed(3)}°.
                       </p>
                       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -539,7 +576,7 @@ export default function WaterStorageCalculatorPage() {
                         <p className="mt-2 text-slate-600">NASA POWER values remain visible as a reference; your manually entered annual rainfall is used.</p>
                       )}
                       <p className="mt-2 text-[11px] text-slate-600">
-                        Gridded estimate, not a rain-gauge observation. Retrieved {new Date(rainfallData.retrievedAt).toLocaleDateString("en-GB")}.
+                        Gridded daily precipitation aggregated to monthly climate averages; not a rain-gauge observation. Retrieved {new Date(rainfallData.retrievedAt).toLocaleDateString("en-GB")}.
                       </p>
                     </>
                   )}

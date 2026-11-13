@@ -1,18 +1,25 @@
-const NASA_POWER_BASE_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point";
-// PRECTOTCORR is available for monthly time series in the AG community.
+const NASA_POWER_BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point";
 const PARAMETER = "PRECTOTCORR";
 const COMMUNITY = "AG";
 const START_YEAR = 2001;
 const END_YEAR = 2022;
+const START_DATE = `${START_YEAR}0101`;
+const END_DATE = `${END_YEAR}1231`;
+const MIN_VALID_DAYS_FRACTION = 0.9;
+const MIN_VALID_SAMPLE_YEARS = Math.ceil((END_YEAR - START_YEAR + 1) * 0.8);
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 type PowerPayload = {
+  messages?: string[];
+  header?: { title?: string };
   geometry?: { coordinates?: number[] };
-  parameters?: Record<string, { units?: string; longname?: string }>;
-  properties?: { parameter?: Record<string, Record<string, number>> };
+  parameters?: Record<string, { units?: string; longname?: string; fill_value?: number }>;
+  properties?: {
+    parameter?: Record<string, Record<string, number>>;
+  };
 };
 
 function daysInMonth(year: number, month: number) {
@@ -27,6 +34,14 @@ function validCoordinate(value: string | null, min: number, max: number) {
     : null;
 }
 
+function providerMessages(payload: PowerPayload | null) {
+  return (payload?.messages ?? [])
+    .map((message) => message.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" ");
+}
+
 export const runtime = "nodejs";
 export const revalidate = 86_400;
 
@@ -37,7 +52,7 @@ export async function GET(request: Request) {
 
   if (latitude === null || longitude === null) {
     return Response.json(
-      { error: "Enter valid site latitude and longitude in decimal degrees." },
+      { error: "Enter valid site latitude and longitude in WGS 84 decimal degrees." },
       { status: 400 }
     );
   }
@@ -45,113 +60,181 @@ export async function GET(request: Request) {
   const query = new URLSearchParams({
     parameters: PARAMETER,
     community: COMMUNITY,
-    latitude: latitude.toFixed(5),
     longitude: longitude.toFixed(5),
-    start: String(START_YEAR),
-    end: String(END_YEAR),
+    latitude: latitude.toFixed(5),
+    start: START_DATE,
+    end: END_DATE,
     format: "JSON",
+    "time-standard": "UTC",
   });
 
   try {
     const upstream = await fetch(`${NASA_POWER_BASE_URL}?${query.toString()}`, {
       headers: { Accept: "application/json" },
       next: { revalidate: 604_800 },
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(30_000),
     });
 
+    const payload = await upstream.json().catch(() => null) as PowerPayload | null;
+
     if (!upstream.ok) {
+      const detail = providerMessages(payload);
+      const message = upstream.status === 429
+        ? "NASA POWER is temporarily rate-limiting rainfall requests. Wait a little, then retry the selected point."
+        : detail
+          ? `NASA POWER rejected the rainfall request (${upstream.status}): ${detail}`
+          : `NASA POWER could not return daily rainfall data (HTTP ${upstream.status}). Retry the point or enter rainfall manually.`;
+      return Response.json(
+        { error: message, providerStatus: upstream.status, providerMessages: detail || undefined },
+        {
+          status: upstream.status === 429 ? 503 : 502,
+          headers: { "Cache-Control": "no-store" },
+        }
+      );
+    }
+
+    const dailyValues = payload?.properties?.parameter?.[PARAMETER];
+    if (!dailyValues || typeof dailyValues !== "object") {
+      const detail = providerMessages(payload);
       return Response.json(
         {
-          error: upstream.status === 429
-            ? "NASA POWER is temporarily rate-limiting requests. Try again shortly or enter rainfall manually."
-            : "NASA POWER could not return rainfall data for this location. You can enter a known rainfall value manually.",
-          providerStatus: upstream.status,
+          error: detail
+            ? `NASA POWER returned no ${PARAMETER} daily series: ${detail}`
+            : `NASA POWER returned no daily ${PARAMETER} rainfall series for this point.`,
         },
-        { status: upstream.status === 429 ? 503 : 502, headers: { "Cache-Control": "no-store" } }
-      );
-    }
-
-    const payload = (await upstream.json()) as PowerPayload;
-    const parameterValues = payload.properties?.parameter?.[PARAMETER];
-    if (!parameterValues || typeof parameterValues !== "object") {
-      return Response.json(
-        { error: "NASA POWER returned no monthly rainfall series for this location." },
         { status: 502, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    const unit = payload.parameters?.[PARAMETER]?.units ?? "mm/day";
+    const unit = payload?.parameters?.[PARAMETER]?.units ?? "mm/day";
     if (!unit.toLowerCase().includes("mm/day")) {
       return Response.json(
-        { error: `NASA POWER returned an unexpected rainfall unit (${unit}); no conversion was applied.` },
+        {
+          error: `NASA POWER returned an unexpected daily rainfall unit (${unit}); conversion was stopped to avoid incorrect results.`,
+        },
         { status: 502, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    const monthlySamples = Array.from({ length: 12 }, () => [] as number[]);
-    for (const [key, rawValue] of Object.entries(parameterValues)) {
-      if (!/^\d{6}$/.test(key)) continue;
-      const year = Number(key.slice(0, 4));
-      const month = Number(key.slice(4, 6));
-      const dailyMeanMm = Number(rawValue);
+    // Aggregate daily precipitation (mm/day) into calendar-month totals (mm),
+    // then compute the mean total for each calendar month over 2001–2022.
+    const monthlyByYear = new Map<number, Array<{ totalMm: number; validDays: number }>>();
+    for (let year = START_YEAR; year <= END_YEAR; year += 1) {
+      monthlyByYear.set(
+        year,
+        Array.from({ length: 12 }, () => ({ totalMm: 0, validDays: 0 }))
+      );
+    }
+
+    const fillValue = payload?.parameters?.[PARAMETER]?.fill_value;
+    for (const [dateKey, rawValue] of Object.entries(dailyValues)) {
+      if (!/^\d{8}$/.test(dateKey)) continue;
+
+      const year = Number(dateKey.slice(0, 4));
+      const month = Number(dateKey.slice(4, 6));
+      const day = Number(dateKey.slice(6, 8));
+      const dailyRainfallMm = Number(rawValue);
+
       if (
         year < START_YEAR ||
         year > END_YEAR ||
         month < 1 ||
         month > 12 ||
-        !Number.isFinite(dailyMeanMm) ||
-        dailyMeanMm < 0 ||
-        dailyMeanMm >= 999
-      ) continue;
+        day < 1 ||
+        day > daysInMonth(year, month) ||
+        !Number.isFinite(dailyRainfallMm) ||
+        dailyRainfallMm < 0 ||
+        dailyRainfallMm >= 999 ||
+        (fillValue !== undefined && dailyRainfallMm === fillValue)
+      ) {
+        continue;
+      }
 
-      // Monthly API aggregate is expressed as mean daily precipitation (mm/day).
-      // Convert each year's monthly mean to accumulated monthly depth before
-      // averaging the same calendar month across the chosen climatology period.
-      monthlySamples[month - 1].push(dailyMeanMm * daysInMonth(year, month));
+      const yearMonths = monthlyByYear.get(year);
+      if (!yearMonths) continue;
+      yearMonths[month - 1].totalMm += dailyRainfallMm;
+      yearMonths[month - 1].validDays += 1;
     }
 
-    const monthlyRainfall = monthlySamples.map((samples, index) => {
-      if (samples.length === 0) return null;
-      const average = samples.reduce((sum, value) => sum + value, 0) / samples.length;
+    const monthlyRainfall = MONTHS.map((monthName, monthIndex) => {
+      const validMonthlyTotals: number[] = [];
+      for (let year = START_YEAR; year <= END_YEAR; year += 1) {
+        const monthly = monthlyByYear.get(year)?.[monthIndex];
+        if (!monthly) continue;
+
+        const expectedDays = daysInMonth(year, monthIndex + 1);
+        if (monthly.validDays >= Math.ceil(expectedDays * MIN_VALID_DAYS_FRACTION)) {
+          validMonthlyTotals.push(monthly.totalMm);
+        }
+      }
+
+      if (validMonthlyTotals.length < MIN_VALID_SAMPLE_YEARS) {
+        return {
+          month: monthName,
+          monthNumber: monthIndex + 1,
+          rainfallMm: null,
+          sampleYears: validMonthlyTotals.length,
+        };
+      }
+
+      const meanMonthlyTotalMm =
+        validMonthlyTotals.reduce((sum, total) => sum + total, 0) / validMonthlyTotals.length;
+
       return {
-        month: MONTHS[index],
-        monthNumber: index + 1,
-        rainfallMm: Math.round(average * 10) / 10,
-        sampleYears: samples.length,
+        month: monthName,
+        monthNumber: monthIndex + 1,
+        rainfallMm: Math.round(meanMonthlyTotalMm * 10) / 10,
+        sampleYears: validMonthlyTotals.length,
       };
     });
 
-    if (monthlyRainfall.some((month) => month === null)) {
+    const missingMonths = monthlyRainfall.filter((month) => month.rainfallMm === null);
+    if (missingMonths.length > 0) {
       return Response.json(
-        { error: "NASA POWER returned an incomplete monthly rainfall series. Try another site or enter rainfall manually." },
+        {
+          error: `NASA POWER returned incomplete daily rainfall coverage for ${missingMonths.map((month) => month.month).join(", ")} at this point. Try another point or enter rainfall manually.`,
+          missingMonths: missingMonths.map((month) => ({
+            month: month.month,
+            sampleYears: month.sampleYears,
+          })),
+        },
         { status: 502, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    const months = monthlyRainfall as NonNullable<(typeof monthlyRainfall)[number]>[];
-    const annualRainfallMm = months.reduce((sum, month) => sum + month.rainfallMm, 0);
-    const gridCoordinates = payload.geometry?.coordinates;
-    const gridLongitude = Array.isArray(gridCoordinates) && Number.isFinite(gridCoordinates[0])
-      ? gridCoordinates[0]
-      : longitude;
-    const gridLatitude = Array.isArray(gridCoordinates) && Number.isFinite(gridCoordinates[1])
-      ? gridCoordinates[1]
-      : latitude;
+    const completeMonths = monthlyRainfall as Array<{
+      month: string;
+      monthNumber: number;
+      rainfallMm: number;
+      sampleYears: number;
+    }>;
+    const annualRainfallMm =
+      completeMonths.reduce((sum, month) => sum + month.rainfallMm, 0);
+    const gridCoordinates = payload?.geometry?.coordinates;
+    const gridLongitude =
+      Array.isArray(gridCoordinates) && Number.isFinite(gridCoordinates[0])
+        ? gridCoordinates[0]
+        : longitude;
+    const gridLatitude =
+      Array.isArray(gridCoordinates) && Number.isFinite(gridCoordinates[1])
+        ? gridCoordinates[1]
+        : latitude;
 
     return Response.json(
       {
-        source: "NASA POWER",
+        source: "NASA POWER Daily API",
         parameter: PARAMETER,
         community: COMMUNITY,
         units: "mm/month",
         sourceUnits: unit,
+        timeStandard: "UTC",
         startYear: START_YEAR,
         endYear: END_YEAR,
         annualRainfallMm: Math.round(annualRainfallMm * 10) / 10,
-        monthlyRainfall: months,
+        monthlyRainfall: completeMonths,
         requestedCoordinates: { latitude, longitude },
         dataCoordinates: { latitude: gridLatitude, longitude: gridLongitude },
-        conversionNote: "Monthly mean daily precipitation (mm/day) multiplied by actual days in each month, then averaged for each calendar month over 2001–2022.",
+        conversionNote: "Daily PRECTOTCORR rainfall (mm/day) summed to calendar-month totals (mm), then averaged for each calendar month over 2001–2022. Months with less than 90% daily coverage in a year are excluded; each reported monthly average requires at least 80% of the 22 years.",
         retrievedAt: new Date().toISOString(),
       },
       {
@@ -165,8 +248,8 @@ export async function GET(request: Request) {
     return Response.json(
       {
         error: timedOut
-          ? "NASA POWER took too long to respond. Try again or enter rainfall manually."
-          : "Rainfall data could not be retrieved. Check the connection and try again, or enter rainfall manually.",
+          ? "NASA POWER took too long to return daily rainfall data for this point. Retry, or enter a verified annual rainfall value manually."
+          : "Daily rainfall data could not be retrieved for this point. Check the connection and retry, or enter rainfall manually.",
       },
       { status: 502, headers: { "Cache-Control": "no-store" } }
     );
