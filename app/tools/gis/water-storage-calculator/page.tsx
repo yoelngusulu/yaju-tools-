@@ -33,6 +33,28 @@ type MonthlyRainfall = {
   sampleYears: number;
 };
 
+type AnnualCddRecord = {
+  year: number;
+  cddDays: number | null;
+  validDays: number;
+  expectedDays: number;
+  coveragePercent: number;
+  status: string;
+};
+
+type DryPeriodData = {
+  status: "ready" | "insufficient-data";
+  valueDays: number | null;
+  thresholdMmPerDay: number;
+  percentile: number;
+  percentileMethod: "nearest-rank";
+  validYears: number;
+  requiredValidYears: number;
+  minimumAnnualCoveragePercent: number;
+  annualMaximumCdd: AnnualCddRecord[];
+  message: string | null;
+};
+
 type RainfallData = {
   source: string;
   parameter: string;
@@ -43,6 +65,8 @@ type RainfallData = {
   endYear: number;
   annualRainfallMm: number;
   monthlyRainfall: MonthlyRainfall[];
+  dryPeriod: DryPeriodData;
+  dryPeriodMethod: string;
   requestedCoordinates: GeographicPoint;
   dataCoordinates: GeographicPoint;
   conversionNote: string;
@@ -87,7 +111,9 @@ export default function WaterStorageCalculatorPage() {
   const [collectionEfficiency, setCollectionEfficiency] = useState("90");
   const [people, setPeople] = useState("5");
   const [demand, setDemand] = useState("25");
-  const [dryDays, setDryDays] = useState("120");
+  const [dryDays, setDryDays] = useState("");
+  const [dryPeriodMode, setDryPeriodMode] = useState<"automatic" | "manual">("automatic");
+  const [dryPeriodError, setDryPeriodError] = useState<string | null>(null);
   const [safety, setSafety] = useState("20");
 
   const [boreholeYield, setBoreholeYield] = useState("");
@@ -140,9 +166,24 @@ export default function WaterStorageCalculatorPage() {
         const data = payload as RainfallData;
         setRainfallData(data);
         setRainfall(String(data.annualRainfallMm));
+        if (data.dryPeriod.status === "ready" && data.dryPeriod.valueDays !== null) {
+          setDryDays(String(data.dryPeriod.valueDays));
+          setDryPeriodMode("automatic");
+          setDryPeriodError(null);
+        } else {
+          setDryDays("");
+          setDryPeriodMode("manual");
+          setDryPeriodError(
+            data.dryPeriod.message ??
+              "A reliable automatic dry-period estimate is unavailable. Enter a verified value manually."
+          );
+        }
         setRainfallError(null);
       } catch (error) {
         if (cancelled || (error instanceof Error && error.name === "AbortError")) return;
+        setDryDays("");
+        setDryPeriodMode("manual");
+        setDryPeriodError("Automatic dry-period analysis could not be completed. Enter a verified dry-period value manually.");
         setRainfallError(
           error instanceof Error
             ? error.message
@@ -328,6 +369,9 @@ export default function WaterStorageCalculatorPage() {
     setRainfallMode("automatic");
     setRainfallData(null);
     setRainfallError(null);
+    setDryDays("");
+    setDryPeriodMode("automatic");
+    setDryPeriodError(null);
   };
 
   const applyCoordinates = () => {
@@ -345,6 +389,9 @@ export default function WaterStorageCalculatorPage() {
     setRainfallError(null);
     setRainfallData(null);
     setRainfall("");
+    setDryDays("");
+    setDryPeriodMode("automatic");
+    setDryPeriodError(null);
     setRainfallMode("automatic");
     setRainfallRequestVersion((version) => version + 1);
   };
@@ -460,7 +507,15 @@ export default function WaterStorageCalculatorPage() {
                     })}
                     {field("Number of users", people, setPeople, "people", { step: "1", min: "0" })}
                     {field("Daily water demand per person", demand, setDemand, "L/person/day")}
-                    {field("Dry period", dryDays, setDryDays, "days", { step: "1" })}
+                    {field("Dry period", dryDays, (value) => {
+                      setDryDays(value);
+                      setDryPeriodMode("manual");
+                    }, "days", {
+                      step: "1",
+                      hint: dryPeriodMode === "automatic"
+                        ? "Automatically estimated from the selected site's daily rainfall record. Edit to override."
+                        : "Manual value. Enter a verified dry-period duration when automatic analysis is unavailable or when overriding the estimate.",
+                    })}
                     {field("Storage safety allowance", safety, setSafety, "%")}
                   </>
                 )}
@@ -563,6 +618,33 @@ export default function WaterStorageCalculatorPage() {
                         {rainfallData.source}, {rainfallData.parameter}; daily climate record {rainfallData.startYear}–{rainfallData.endYear}, aggregated to monthly averages.
                         Selected grid: {rainfallData.dataCoordinates.latitude.toFixed(3)}°, {rainfallData.dataCoordinates.longitude.toFixed(3)}°.
                       </p>
+                      <div className="mt-3 rounded-lg border border-blue-200 bg-white p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <strong className="text-sm text-slate-900">Design dry period</strong>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${dryPeriodMode === "automatic" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                            {dryPeriodMode === "automatic" ? "AUTO" : "MANUAL"}
+                          </span>
+                        </div>
+                        {rainfallData.dryPeriod.status === "ready" && rainfallData.dryPeriod.valueDays !== null ? (
+                          <>
+                            <p className="mt-1 text-sm text-slate-800">
+                              {dryPeriodMode === "automatic"
+                                ? `${rainfallData.dryPeriod.valueDays} days calculated`
+                                : `Rainfall-derived reference: ${rainfallData.dryPeriod.valueDays} days; the manually entered value is used.`}
+                            </p>
+                            <p className="mt-1 text-[11px] leading-5 text-slate-600">
+                              Annual maximum consecutive dry days (CDD), daily rainfall below {rainfallData.dryPeriod.thresholdMmPerDay} mm/day; nearest-rank {rainfallData.dryPeriod.percentile}th percentile from {rainfallData.dryPeriod.validYears} valid years of {rainfallData.startYear}–{rainfallData.endYear}. Annual coverage requirement: {rainfallData.dryPeriod.minimumAnnualCoveragePercent}%.
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-1 text-[11px] leading-5 text-amber-800">
+                            {dryPeriodError ?? rainfallData.dryPeriod.message ?? "Automatic dry-period estimation is unavailable. Enter a verified value manually."}
+                          </p>
+                        )}
+                        <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                          CDD spells crossing a calendar year are assigned to the year in which the spell ends. The 90th percentile is the calculator's selected design statistic, not an ETCCDI requirement.
+                        </p>
+                      </div>
                       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                         {rainfallData.monthlyRainfall.map((month) => (
                           <div key={month.monthNumber} className="rounded-lg border border-blue-100 bg-white px-2 py-2">
