@@ -108,8 +108,8 @@ test("a dry spell still open at the end of the record is not reported as complet
 
 test("years below the minimum daily coverage are excluded", () => {
   const values = completeSeries(2001, 2022);
-  for (let day = 1; day <= 50; day += 1) {
-    delete values[`200101${String(day).padStart(2, "0")}`];
+  for (let dayOffset = 0; dayOffset < 40; dayOffset += 1) {
+    delete values[key(Date.UTC(2001, 0, 1 + dayOffset))];
   }
 
   const result = calculateDesignDryPeriod(values, {
@@ -154,7 +154,9 @@ test("NASA POWER invalid and fill values are ignored rather than treated as rain
     fillValue: -999,
   });
 
-  assert.equal(result.annualMaximumCdd[0].status, "insufficient-coverage");
+  assert.equal(result.annualMaximumCdd[0].status, "valid");
+  assert.equal(result.annualMaximumCdd[0].cddDays, 0);
+  assert.equal(result.annualMaximumCdd[0].validDays, 362);
 });
 
 test("the design period is withheld when fewer than 80 percent of annual records are valid", () => {
