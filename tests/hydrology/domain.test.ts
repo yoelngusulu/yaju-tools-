@@ -418,7 +418,7 @@ test("site coordinates parse X longitude, Y latitude, and optional Z elevation",
     latitude: -7.81713,
     elevationM: null,
   });
-  assert.throws(() => parseSiteCoordinates("181", "-7", ""), /X \\(longitude\\) must be between/);
-  assert.throws(() => parseSiteCoordinates("35", "91", ""), /Y \\(latitude\\) must be between/);
+  assert.throws(() => parseSiteCoordinates("181", "-7", ""), /X \(longitude\) must be between/);
+  assert.throws(() => parseSiteCoordinates("35", "91", ""), /Y \(latitude\) must be between/);
   assert.throws(() => parseSiteCoordinates("35", "-7", "NaN"), /Z \(elevation\) must be a finite number/);
 });
