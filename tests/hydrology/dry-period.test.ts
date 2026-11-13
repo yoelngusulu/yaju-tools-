@@ -93,6 +93,23 @@ test("a missing day does not count as dry and censors an active dry spell", () =
   assert.equal(result.annualMaximumCdd[0].cddDays, null);
 });
 
+test("a dry spell beginning immediately after a missing day is censored", () => {
+  const values = completeSeries(2001, 2022);
+  values["20010102"] = -999;
+  values["20010103"] = 0;
+  values["20010104"] = 0;
+  values["20010105"] = 5;
+
+  const result = calculateDesignDryPeriod(values, {
+    startYear: 2001,
+    endYear: 2022,
+    fillValue: -999,
+  });
+
+  assert.equal(result.annualMaximumCdd[0].status, "interrupted-by-missing-data");
+  assert.equal(result.annualMaximumCdd[0].cddDays, null);
+});
+
 test("a dry spell still open at the end of the record is not reported as complete", () => {
   const values = completeSeries(2001, 2022);
   for (let day = 26; day <= 31; day += 1) values[`202212${day}`] = 0;
