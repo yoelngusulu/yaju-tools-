@@ -49,3 +49,37 @@ export function calculateSphericalPolygonAreaM2(
   requirePositive(areaM2, "Polygon area");
   return requireFiniteOutput(areaM2, "Polygon area");
 }
+
+
+export type SiteCoordinates = GeographicPoint & {
+  elevationM: number | null;
+};
+
+/**
+ * Parse map-compatible site coordinates: X=longitude, Y=latitude (WGS 84),
+ * and optional Z=elevation in metres.
+ */
+export function parseSiteCoordinates(
+  x: string,
+  y: string,
+  z: string
+): SiteCoordinates {
+  if (!x.trim()) throw new RangeError("X (longitude) is required.");
+  if (!y.trim()) throw new RangeError("Y (latitude) is required.");
+
+  const longitude = Number(x);
+  const latitude = Number(y);
+  const elevationM = z.trim() ? Number(z) : null;
+
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new RangeError("X (longitude) must be between -180 and 180 degrees.");
+  }
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    throw new RangeError("Y (latitude) must be between -90 and 90 degrees.");
+  }
+  if (elevationM !== null && !Number.isFinite(elevationM)) {
+    throw new RangeError("Z (elevation) must be a finite number of metres.");
+  }
+
+  return { longitude, latitude, elevationM };
+}

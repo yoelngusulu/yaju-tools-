@@ -1,6 +1,7 @@
 const NASA_POWER_BASE_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point";
-const PARAMETER = "IMERG_PRECTOT";
-const COMMUNITY = "HY";
+// PRECTOTCORR is available for monthly time series in the AG community.
+const PARAMETER = "PRECTOTCORR";
+const COMMUNITY = "AG";
 const START_YEAR = 2001;
 const END_YEAR = 2022;
 const MONTHS = [

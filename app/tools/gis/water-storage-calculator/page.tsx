@@ -9,7 +9,7 @@ import { calculateAnnualRainwaterSizing } from "@/features/hydrology/domain/rain
 import { calculateTankCapacity } from "@/features/hydrology/domain/tank";
 import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
-import type { GeographicPoint } from "@/features/hydrology/domain/geometry";
+import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology/domain/geometry";
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
 
 type Mode = "rainwater" | "pump" | "irrigation" | "dimensions";
@@ -69,6 +69,10 @@ const withPrimaryLitres = (
 export default function WaterStorageCalculatorPage() {
   const [mode, setMode] = useState<Mode>("rainwater");
   const [site, setSite] = useState<GeographicPoint | null>(null);
+  const [coordinateX, setCoordinateX] = useState("");
+  const [coordinateY, setCoordinateY] = useState("");
+  const [coordinateZ, setCoordinateZ] = useState("");
+  const [coordinateError, setCoordinateError] = useState<string | null>(null);
   const [roofPolygon, setRoofPolygon] = useState<GeographicPoint[]>([]);
   const [roofArea, setRoofArea] = useState("100");
   const [roofAreaSource, setRoofAreaSource] = useState<"manual" | "map">("manual");
@@ -316,10 +320,23 @@ export default function WaterStorageCalculatorPage() {
 
   const selectSite = (point: GeographicPoint) => {
     setSite(point);
+    setCoordinateX(String(point.longitude));
+    setCoordinateY(String(point.latitude));
+    setCoordinateError(null);
     setRainfall("");
     setRainfallMode("automatic");
     setRainfallData(null);
     setRainfallError(null);
+  };
+
+  const applyCoordinates = () => {
+    try {
+      const coordinates = parseSiteCoordinates(coordinateX, coordinateY, coordinateZ);
+      setCoordinateError(null);
+      selectSite({ latitude: coordinates.latitude, longitude: coordinates.longitude });
+    } catch (error) {
+      setCoordinateError(error instanceof Error ? error.message : "Enter valid X, Y, and Z coordinates.");
+    }
   };
 
   const calculatedResult = calculation.result;
@@ -371,6 +388,35 @@ export default function WaterStorageCalculatorPage() {
                 </div>
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Inputs</span>
               </div>
+
+              <section className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-labelledby="site-coordinate-heading">
+                <div className="mb-3">
+                  <h3 id="site-coordinate-heading" className="text-sm font-bold text-slate-900">Site coordinates (X, Y, Z)</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    X is longitude and Y is latitude in WGS 84 decimal degrees. Z is optional elevation in metres. Its vertical datum is not specified, and current calculations use X/Y only.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {field("X — Longitude", coordinateX, setCoordinateX, "°", { min: "-180", max: "180", hint: "West is negative; east is positive." })}
+                  {field("Y — Latitude", coordinateY, setCoordinateY, "°", { min: "-90", max: "90", hint: "South is negative; north is positive." })}
+                  {field("Z — Elevation (optional)", coordinateZ, setCoordinateZ, "m", { min: "-12000", hint: "Enter elevation in metres if known." })}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={applyCoordinates}
+                    className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                  >
+                    Use site coordinates
+                  </button>
+                  {site && (
+                    <span className="text-xs text-slate-600">
+                      Map site: X {site.longitude.toFixed(5)}°, Y {site.latitude.toFixed(5)}°
+                    </span>
+                  )}
+                </div>
+                {coordinateError && <p role="alert" className="mt-2 text-sm text-rose-700">{coordinateError}</p>}
+              </section>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {mode === "rainwater" && (

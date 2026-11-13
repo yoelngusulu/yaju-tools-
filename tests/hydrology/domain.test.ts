@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { parseSiteCoordinates } from "../../features/hydrology/domain/geometry";
 import {
   calculateIrrigationRequirement,
 } from "../../features/hydrology/domain/irrigation";
@@ -401,4 +402,21 @@ test("spherical polygon area converts a small WGS 84 roof footprint to square me
     ]),
     /valid WGS 84 coordinates/
   );
+});
+
+
+test("site coordinates parse X longitude, Y latitude, and optional Z elevation", () => {
+  assert.deepEqual(parseSiteCoordinates("35.66582", "-7.81713", "1721.47"), {
+    longitude: 35.66582,
+    latitude: -7.81713,
+    elevationM: 1721.47,
+  });
+  assert.deepEqual(parseSiteCoordinates("35.66582", "-7.81713", ""), {
+    longitude: 35.66582,
+    latitude: -7.81713,
+    elevationM: null,
+  });
+  assert.throws(() => parseSiteCoordinates("181", "-7", ""), /longitude must be between/);
+  assert.throws(() => parseSiteCoordinates("35", "91", ""), /latitude must be between/);
+  assert.throws(() => parseSiteCoordinates("35", "-7", "NaN"), /Z \(elevation\) must be a finite number/);
 });
