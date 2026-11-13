@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run test:hydrology && next build",
+    "build": "npm run test:hydrology && npx eslint features/hydrology/domain/dry-period.ts app/api/climate/rainfall/route.ts app/tools/gis/water-storage-calculator/page.tsx tests/hydrology/dry-period.test.ts tests/hydrology/rainfall-route.test.ts tests/hydrology/domain.test.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "test:hydrology": "tsx --test tests/hydrology/*.test.ts"
