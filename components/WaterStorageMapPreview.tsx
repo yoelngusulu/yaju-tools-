@@ -7,24 +7,24 @@ import {
   type GeographicPoint,
 } from "@/features/hydrology/domain/geometry";
 
-type InteractionMode = "site" | "roof" | null;
+type InteractionMode = "site" | "catchment" | null;
 
 type Props = {
   site: GeographicPoint | null;
-  roofPolygon: GeographicPoint[];
-  roofAreaM2: number | null;
+  catchmentPolygon: GeographicPoint[];
+  catchmentAreaM2: number | null;
   onSiteSelect: (point: GeographicPoint) => void;
-  onRoofComplete: (areaM2: number, points: GeographicPoint[]) => void;
-  onRoofClear: () => void;
+  onCatchmentComplete: (areaM2: number, points: GeographicPoint[]) => void;
+  onCatchmentClear: () => void;
 };
 
 export default function WaterStorageMapPreview({
   site,
-  roofPolygon,
-  roofAreaM2,
+  catchmentPolygon,
+  catchmentAreaM2,
   onSiteSelect,
-  onRoofComplete,
-  onRoofClear,
+  onCatchmentComplete,
+  onCatchmentClear,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
@@ -75,7 +75,7 @@ export default function WaterStorageMapPreview({
             siteSelectRef.current(point);
             modeRef.current = null;
             setInteractionMode(null);
-          } else if (modeRef.current === "roof") {
+          } else if (modeRef.current === "catchment") {
             setDraftPoints((current) => [...current, point]);
           }
         });
@@ -104,7 +104,7 @@ export default function WaterStorageMapPreview({
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
-    if (interactionMode === "roof") map.doubleClickZoom.disable();
+    if (interactionMode === "catchment") map.doubleClickZoom.disable();
     else map.doubleClickZoom.enable();
   }, [interactionMode, mapReady]);
 
@@ -125,11 +125,11 @@ export default function WaterStorageMapPreview({
       }).bindPopup("Selected project site").addTo(layers);
     }
 
-    if (roofPolygon.length >= 3) {
+    if (catchmentPolygon.length >= 3) {
       L.polygon(
-        roofPolygon.map((point) => [point.latitude, point.longitude] as [number, number]),
+        catchmentPolygon.map((point) => [point.latitude, point.longitude] as [number, number]),
         { color: "#0f766e", weight: 2, fillColor: "#14b8a6", fillOpacity: 0.22 }
-      ).bindPopup("Roof footprint").addTo(layers);
+      ).bindPopup("Catchment polygon").addTo(layers);
     }
 
     if (draftPoints.length > 0) {
@@ -142,14 +142,21 @@ export default function WaterStorageMapPreview({
           fillOpacity: 1,
         }).bindTooltip(`Vertex ${index + 1}`).addTo(layers);
       });
-      if (draftPoints.length > 1) {
+      if (draftPoints.length >= 3) {
+        // Leaflet polygons close the last corner back to the first corner,
+        // previewing the completed catchment boundary before confirmation.
+        L.polygon(
+          draftPoints.map((point) => [point.latitude, point.longitude] as [number, number]),
+          { color: "#0f766e", weight: 2, dashArray: "5 5", fillColor: "#14b8a6", fillOpacity: 0.08 }
+        ).addTo(layers);
+      } else if (draftPoints.length > 1) {
         L.polyline(
           draftPoints.map((point) => [point.latitude, point.longitude] as [number, number]),
           { color: "#0f766e", weight: 2, dashArray: "5 5" }
         ).addTo(layers);
       }
     }
-  }, [site, roofPolygon, draftPoints, mapReady]);
+  }, [site, catchmentPolygon, draftPoints, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -158,16 +165,16 @@ export default function WaterStorageMapPreview({
     }
   }, [site, mapReady]);
 
-  const finishRoof = () => {
+  const finishPolygon = () => {
     if (draftPoints.length < 3) return;
     try {
       const areaM2 = calculateSphericalPolygonAreaM2(draftPoints);
-      onRoofComplete(areaM2, draftPoints);
+      onCatchmentComplete(areaM2, draftPoints);
       setDraftPoints([]);
       setMode(null);
       setMapError(null);
     } catch (error) {
-      setMapError(error instanceof Error ? error.message : "The roof outline is invalid.");
+      setMapError(error instanceof Error ? error.message : "The catchment polygon is invalid.");
     }
   };
 
@@ -185,13 +192,13 @@ export default function WaterStorageMapPreview({
             <MapPinned size={17} className="text-blue-600" />
             Map Preview
           </div>
-          <p className="mt-1 text-xs text-slate-500">Choose the project site and outline the roof footprint</p>
+          <p className="mt-1 text-xs text-slate-500">Choose the project site and outline the catchment boundary</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
           {interactionMode === "site"
             ? "Click map to select site"
-            : interactionMode === "roof"
-              ? `${draftPoints.length} roof vertices`
+            : interactionMode === "catchment"
+              ? `${draftPoints.length} catchment vertices`
               : site
                 ? "Site selected"
                 : "No site selected"}
@@ -213,24 +220,24 @@ export default function WaterStorageMapPreview({
           onClick={() => {
             setMapError(null);
             setDraftPoints([]);
-            setMode(interactionMode === "roof" ? null : "roof");
+            setMode(interactionMode === "catchment" ? null : "catchment");
           }}
-          aria-pressed={interactionMode === "roof"}
-          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${interactionMode === "roof" ? "border-teal-700 bg-teal-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-teal-500"}`}
+          aria-pressed={interactionMode === "catchment"}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${interactionMode === "catchment" ? "border-teal-700 bg-teal-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-teal-500"}`}
         >
           <PencilRuler size={16} />
-          Draw roof area
+          Draw catchment area
         </button>
-        {interactionMode === "roof" && (
+        {interactionMode === "catchment" && (
           <>
             <button
               type="button"
-              onClick={finishRoof}
+              onClick={finishPolygon}
               disabled={draftPoints.length < 3}
               className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check size={16} />
-              Finish outline
+              Close polygon and calculate area
             </button>
             <button
               type="button"
@@ -242,31 +249,42 @@ export default function WaterStorageMapPreview({
             </button>
           </>
         )}
-        {roofPolygon.length > 0 && interactionMode !== "roof" && (
+        {catchmentPolygon.length > 0 && interactionMode !== "catchment" && (
           <button
             type="button"
-            onClick={onRoofClear}
+            onClick={onCatchmentClear}
             className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
           >
             <Trash2 size={15} />
-            Clear outline
+            Clear polygon
           </button>
         )}
       </div>
 
-      <div ref={containerRef} className="h-[430px] w-full bg-slate-100 md:h-[540px]" aria-label="Map to select site and draw roof footprint" />
+      <div ref={containerRef} className="h-[430px] w-full bg-slate-100 md:h-[540px]" aria-label="Map to select site and draw catchment boundary" />
 
       <div className="space-y-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
         {mapError && <p role="alert" className="rounded-lg bg-rose-50 p-2 text-rose-700">{mapError}</p>}
         {interactionMode === "site" && <p>Click once at the project site. Rainfall data will be requested for that location.</p>}
-        {interactionMode === "roof" && <p>Click each roof corner in sequence, then choose “Finish outline”. Use at least three vertices. Double-click zoom is disabled while drawing.</p>}
+        {interactionMode === "catchment" && <p>Click each catchment boundary corner in sequence. Once three or more points are added, the preview joins the last point back to the first to close the polygon. Select “Close polygon and calculate area” to confirm it.</p>}
         {site ? (
           <p className="font-medium text-slate-700">Selected site: {site.latitude.toFixed(5)}°, {site.longitude.toFixed(5)}°</p>
         ) : (
           <p>Select a site to retrieve rainfall. Rainfall can also be entered manually.</p>
         )}
-        {roofAreaM2 !== null && roofAreaM2 > 0 && (
-          <p className="font-semibold text-teal-800">Outlined roof plan area: {roofAreaM2.toLocaleString("en-US", { maximumFractionDigits: 1 })} m²</p>
+        {catchmentAreaM2 !== null && catchmentAreaM2 > 0 && (
+          <div className="rounded-lg bg-teal-50 p-3 text-teal-900">
+            <p className="font-semibold">Calculated catchment polygon area</p>
+            <p className="mt-1 text-base font-bold tabular-nums">
+              {catchmentAreaM2.toLocaleString("en-US", { maximumFractionDigits: 1 })} m²
+            </p>
+            <p className="mt-0.5 text-xs tabular-nums">
+              {(catchmentAreaM2 / 10_000).toLocaleString("en-US", { maximumFractionDigits: 4 })} ha
+              {" · "}
+              {(catchmentAreaM2 / 1_000_000).toLocaleString("en-US", { maximumFractionDigits: 6 })} km²
+            </p>
+            <p className="mt-1 text-[11px] text-teal-800">This area is transferred to the Catchment area input.</p>
+          </div>
         )}
         <p className="text-[11px] leading-5 text-slate-400">Map tiles © OpenStreetMap contributors. An internet connection is required to display the map.</p>
       </div>

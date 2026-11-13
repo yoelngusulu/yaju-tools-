@@ -73,9 +73,9 @@ export default function WaterStorageCalculatorPage() {
   const [coordinateY, setCoordinateY] = useState("");
   const [coordinateZ, setCoordinateZ] = useState("");
   const [coordinateError, setCoordinateError] = useState<string | null>(null);
-  const [roofPolygon, setRoofPolygon] = useState<GeographicPoint[]>([]);
-  const [roofArea, setRoofArea] = useState("100");
-  const [roofAreaSource, setRoofAreaSource] = useState<"manual" | "map">("manual");
+  const [catchmentPolygon, setCatchmentPolygon] = useState<GeographicPoint[]>([]);
+  const [catchmentArea, setCatchmentArea] = useState("100");
+  const [catchmentAreaSource, setCatchmentAreaSource] = useState<"manual" | "map">("manual");
 
   const [rainfall, setRainfall] = useState("");
   const [rainfallMode, setRainfallMode] = useState<"automatic" | "manual">("automatic");
@@ -171,7 +171,7 @@ export default function WaterStorageCalculatorPage() {
         }
         const result = calculateAnnualRainwaterSizing({
           rainfallMm: value(rainfall, "Annual rainfall"),
-          catchmentAreaM2: value(roofArea, "Catchment / roof area"),
+          catchmentAreaM2: value(catchmentArea, "Catchment area"),
           runoffCoefficient: value(runoff, "Runoff coefficient"),
           collectionEfficiency: value(collectionEfficiency, "Collection efficiency") / 100,
           people: value(people, "Number of users"),
@@ -287,7 +287,7 @@ export default function WaterStorageCalculatorPage() {
       };
     }
   }, [
-    mode, roofArea, rainfall, runoff, collectionEfficiency, people, demand, dryDays,
+    mode, catchmentArea, rainfall, runoff, collectionEfficiency, people, demand, dryDays,
     safety, boreholeYield, pumpRatedDischarge, actualDischarge, pumpHours, pumpDemand,
     reserveDays, area, eto, kc, effectiveRain, efficiency, interval, shape, diameter,
     height, length, width, freeboardHeight, deadStorage,
@@ -421,14 +421,14 @@ export default function WaterStorageCalculatorPage() {
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {mode === "rainwater" && (
                   <>
-                    {field("Roof / catchment area", roofArea, (value) => {
-                      setRoofArea(value);
-                      setRoofAreaSource("manual");
+                    {field("Catchment area (roof or land polygon)", catchmentArea, (value) => {
+                      setCatchmentArea(value);
+                      setCatchmentAreaSource("manual");
                     }, "m²", {
                       min: "0.01",
-                      hint: roofAreaSource === "map"
-                        ? "Calculated from the roof outline drawn on the map. You can edit this value."
-                        : "Enter the roof plan area, or draw its outline on the map.",
+                      hint: catchmentAreaSource === "map"
+                        ? "Calculated from the polygon drawn on the map. You can edit this value."
+                        : "Enter the catchment area manually, or draw its boundary polygon on the map.",
                     })}
                     {field("Annual rainfall", rainfall, (value) => {
                       setRainfall(value);
@@ -441,7 +441,7 @@ export default function WaterStorageCalculatorPage() {
                     {field("Runoff coefficient", runoff, setRunoff, "0–1", {
                       min: "0",
                       max: "1",
-                      hint: "Represents the share of rainfall converted to roof runoff. Adjust for roof material and condition.",
+                      hint: "Represents the share of rainfall converted to catchment runoff. Adjust for catchment surface type and condition.",
                     })}
                     {field("Collection efficiency", collectionEfficiency, setCollectionEfficiency, "%", {
                       min: "0.01",
@@ -588,24 +588,24 @@ export default function WaterStorageCalculatorPage() {
           <aside className="min-w-0 xl:sticky xl:top-24">
             <WaterStorageMapPreview
               site={site}
-              roofPolygon={roofPolygon}
-              roofAreaM2={roofAreaSource === "map" ? Number(roofArea) : null}
+              catchmentPolygon={catchmentPolygon}
+              catchmentAreaM2={catchmentAreaSource === "map" ? Number(catchmentArea) : null}
               onSiteSelect={selectSite}
-              onRoofComplete={(areaM2, points) => {
-                setRoofPolygon(points);
-                setRoofArea(String(Number(areaM2.toFixed(1))));
-                setRoofAreaSource("map");
+              onCatchmentComplete={(areaM2, points) => {
+                setCatchmentPolygon(points);
+                setCatchmentArea(String(Number(areaM2.toFixed(1))));
+                setCatchmentAreaSource("map");
               }}
-              onRoofClear={() => {
-                setRoofPolygon([]);
-                setRoofAreaSource("manual");
+              onCatchmentClear={() => {
+                setCatchmentPolygon([]);
+                setCatchmentAreaSource("manual");
               }}
             />
 
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-600">
               <div className="flex items-center gap-2 font-semibold text-slate-800">
                 <MapPinned size={15} className="text-blue-600" />
-                Site and roof summary
+                Site and catchment summary
               </div>
               {site ? (
                 <p className="mt-2">
@@ -615,13 +615,18 @@ export default function WaterStorageCalculatorPage() {
               ) : (
                 <p className="mt-2">No site selected. Select “Select site” above the map, then click the project location.</p>
               )}
-              <p className="mt-2">Roof area: {roofAreaSource === "map" ? "map outline" : "manual input"}; {roofArea || "not entered"} m².</p>
+              <p className="mt-2">
+                Catchment area: {catchmentAreaSource === "map" ? "map polygon" : "manual input"}; {catchmentArea || "not entered"} m²
+                {catchmentAreaSource === "map" && Number(catchmentArea) > 0 && (
+                  <> ({fmt(Number(catchmentArea) / 10_000, 4)} ha; {fmt(Number(catchmentArea) / 1_000_000, 6)} km²)</>
+                )}.
+              </p>
             </div>
           </aside>
         </div>
 
         <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950 sm:p-5">
-          <strong>Engineering and data note:</strong> This calculator provides preliminary sizing estimates. NASA POWER rainfall is a gridded climate estimate and may differ from a local rain gauge. Roof area drawn on the map is a horizontal plan-area estimate; verify it against roof geometry and actual measurements. Rainwater sizing uses annual rainfall and dry-period demand, not a daily rainfall-runoff simulation. Confirm site-specific inputs and applicable engineering standards before final design.
+          <strong>Engineering and data note:</strong> This calculator provides preliminary sizing estimates. NASA POWER rainfall is a gridded climate estimate and may differ from a local rain gauge. The mapped polygon is measured as a horizontal planimetric area from its geographic vertices. For sloping roofs, this is plan area, not true roof surface area. For larger or cadastral catchments, confirm the boundary and use suitable projected survey measurements. For a natural watershed, this polygon area is only a geometric measurement; this calculator does not estimate calibrated outlet discharge. Use an appropriate rainfall-runoff model and site-specific hydrological parameters for watershed design. Rainwater sizing here uses annual rainfall and dry-period demand, not a daily rainfall-runoff simulation. Confirm site-specific inputs and applicable engineering standards before final design.
         </section>
       </div>
     </main>

@@ -377,7 +377,7 @@ test("rectangular tank computes usable volume and rejects impossible deductions"
 });
 
 
-test("spherical polygon area converts a small WGS 84 roof footprint to square metres", async () => {
+test("spherical polygon area converts a small WGS 84 catchment polygon to square metres", async () => {
   const { calculateSphericalPolygonAreaM2 } = await import("../../features/hydrology/domain/geometry");
   const area = calculateSphericalPolygonAreaM2([
     { latitude: -6.8, longitude: 39.2 },
@@ -386,7 +386,9 @@ test("spherical polygon area converts a small WGS 84 roof footprint to square me
     { latitude: -6.799, longitude: 39.2 },
   ]);
 
-  assert.ok(area > 12_000 && area < 13_000, `unexpected footprint area: ${area}`);
+  assert.ok(area > 12_000 && area < 13_000, `unexpected catchment area: ${area}`);
+  assert.ok(area / 10_000 > 1.2 && area / 10_000 < 1.3, "hectare conversion should be consistent");
+  assert.ok(area / 1_000_000 > 0.012 && area / 1_000_000 < 0.013, "square-kilometre conversion should be consistent");
   assert.throws(
     () => calculateSphericalPolygonAreaM2([
       { latitude: -6.8, longitude: 39.2 },
