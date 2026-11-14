@@ -50,6 +50,10 @@ export default function PrivacyPage() {
                 details, when you register or sign in.
               </li>
               <li>
+                If you join the YAJU waitlist, we store your email address and
+                signup consent time to provide requested product announcements.
+              </li>
+              <li>
                 Files, coordinates and other content you submit to complete a
                 requested operation.
               </li>
