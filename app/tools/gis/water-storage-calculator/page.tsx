@@ -400,8 +400,8 @@ export default function WaterStorageCalculatorPage() {
   const monthlyRainfallMaximum = Math.max(
     50,
     Math.ceil(
-      rainfallData?.monthlyRainfall.reduce((maximum, month) => Math.max(maximum, month.rainfallMm), 0) ?? 0
-    ) / 50 * 50
+      (rainfallData?.monthlyRainfall.reduce((maximum, month) => Math.max(maximum, month.rainfallMm), 0) ?? 0) / 50
+    ) * 50
   );
 
   return (
