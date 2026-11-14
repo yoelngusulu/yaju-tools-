@@ -397,6 +397,12 @@ export default function WaterStorageCalculatorPage() {
   };
 
   const calculatedResult = calculation.result;
+  const monthlyRainfallMaximum = Math.max(
+    50,
+    Math.ceil(
+      rainfallData?.monthlyRainfall.reduce((maximum, month) => Math.max(maximum, month.rainfallMm), 0) ?? 0
+    ) / 50 * 50
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
@@ -654,14 +660,53 @@ export default function WaterStorageCalculatorPage() {
                           CDD spells crossing a calendar year are assigned to the year in which the spell ends. The 90th percentile is the calculator&apos;s selected design statistic, not an ETCCDI requirement.
                         </p>
                       </div>
-                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                        {rainfallData.monthlyRainfall.map((month) => (
-                          <div key={month.monthNumber} className="rounded-lg border border-blue-100 bg-white px-2 py-2">
-                            <div className="text-[10px] font-semibold text-slate-500">{month.month}</div>
-                            <div className="mt-0.5 text-sm font-bold tabular-nums text-slate-900">{fmt(month.rainfallMm, 1)}</div>
-                            <div className="text-[10px] text-slate-500">mm/month</div>
-                          </div>
-                        ))}
+                      <div className="mt-3 rounded-lg border border-blue-100 bg-white p-3 sm:p-4">
+                        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-1">
+                          <strong className="text-sm text-slate-900">Average monthly rainfall</strong>
+                          <span className="text-[11px] text-slate-500">Monthly total (mm/month)</span>
+                        </div>
+                        <div className="w-full overflow-x-auto">
+                          <svg
+                            viewBox="0 0 720 290"
+                            role="img"
+                            aria-labelledby="monthly-rainfall-chart-title monthly-rainfall-chart-description"
+                            className="h-auto min-w-[560px] w-full"
+                          >
+                            <title id="monthly-rainfall-chart-title">Average monthly rainfall hyetograph</title>
+                            <desc id="monthly-rainfall-chart-description">
+                              Bar chart of average monthly rainfall in millimetres per month from January to December.
+                            </desc>
+                            {Array.from({ length: Math.floor(monthlyRainfallMaximum / 50) + 1 }, (_, index) => {
+                              const tick = index * 50;
+                              const y = 224 - (tick / monthlyRainfallMaximum) * 184;
+                              return (
+                                <g key={tick}>
+                                  <line x1="48" x2="700" y1={y} y2={y} stroke="#dbeafe" strokeDasharray="3 4" />
+                                  <text x="40" y={y + 4} textAnchor="end" className="fill-slate-500" fontSize="10">{tick}</text>
+                                </g>
+                              );
+                            })}
+                            <text transform="translate(12 140) rotate(-90)" textAnchor="middle" className="fill-slate-500" fontSize="10">
+                              Rainfall (mm/month)
+                            </text>
+                            {rainfallData.monthlyRainfall.map((month, index) => {
+                              const x = 59 + index * 54;
+                              const barHeight = (month.rainfallMm / monthlyRainfallMaximum) * 184;
+                              const y = 224 - barHeight;
+                              return (
+                                <g key={month.monthNumber}>
+                                  <rect x={x} y={y} width="30" height={barHeight} rx="3" className="fill-blue-600 transition-colors hover:fill-blue-800" />
+                                  <text x={x + 15} y={Math.max(12, y - 5)} textAnchor="middle" className="fill-slate-800" fontSize="9" fontWeight="600">
+                                    {fmt(month.rainfallMm, 1)}
+                                  </text>
+                                  <text x={x + 15} y="244" textAnchor="middle" className="fill-slate-600" fontSize="10">
+                                    {month.month.slice(0, 3)}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
                       </div>
                       {rainfallMode === "manual" && (
                         <p className="mt-2 text-slate-600">NASA POWER values remain visible as a reference; your manually entered annual rainfall is used.</p>
