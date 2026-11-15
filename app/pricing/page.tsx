@@ -83,6 +83,7 @@ export const metadata = {
   title: "Pricing | YAJU",
   description:
     "YAJU pricing for free, daily, Pro and high-volume users.",
+  alternates: { canonical: "/pricing" },
 };
 
 export default function PricingPage() {
