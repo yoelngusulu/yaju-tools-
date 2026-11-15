@@ -16,6 +16,7 @@ import ToolHubPage from "@/components/ToolHubPage";
 
 export const metadata = {
   title: "Free PDF Tools: Convert, Merge, Split & Compress",
+  alternates: { canonical: "/tools/pdf" },
 };
 
 const pdfTools = [
