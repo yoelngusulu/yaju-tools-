@@ -7,6 +7,7 @@ import ToolHubPage from "@/components/ToolHubPage";
 
 export const metadata = {
   title: "Image to PDF Converter & Online Image Tools",
+  alternates: { canonical: "/tools/image" },
 };
 
 const imageTools = [
