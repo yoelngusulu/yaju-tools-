@@ -5,6 +5,7 @@ import { ArrowRight, FileText } from "lucide-react";
 export const metadata: Metadata = {
   title: "YAJU Documents Guide | YAJU Documentation",
   description: "Learn how to convert, merge, split, compress, protect and unlock PDF files with YAJU Documents.",
+  alternates: { canonical: "/docs/documents" },
 };
 
 const guides = [
