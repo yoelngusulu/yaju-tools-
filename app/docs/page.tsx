@@ -5,6 +5,7 @@ import { ArrowRight, FileText, Image as ImageIcon, MapPinned, Printer } from "lu
 export const metadata: Metadata = {
   title: "Documentation | YAJU",
   description: "Simple guides for using YAJU Field Tools, YAJU Documents and YAJU Images.",
+  alternates: { canonical: "/docs" },
 };
 
 const sections = [

@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 export const metadata: Metadata = {
   title: "Getting Started | YAJU Documentation",
   description: "Start using YAJU conversion tools in a few simple steps.",
+  alternates: { canonical: "/docs/getting-started" },
 };
 
 const steps = [

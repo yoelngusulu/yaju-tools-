@@ -18,9 +18,6 @@ export const metadata: Metadata = {
   description:
     "Use free YAJU Utility tools to merge, split and compress PDFs, convert images to PDF, convert coordinates and calculate field measurements online.",
   applicationName: "YAJU",
-  alternates: {
-    canonical: "./",
-  },
   openGraph: {
     siteName: "YAJU",
     type: "website",

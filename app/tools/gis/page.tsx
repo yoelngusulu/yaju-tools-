@@ -45,6 +45,7 @@ export const metadata = {
   title: "Free GIS Tools: CRS/EPSG Finder & Field Tools",
   description:
     "YAJU Field Tools for coordinate conversion, distance and area measurement, water storage and tank sizing, irrigation storage and bearing calculations.",
+  alternates: { canonical: "/tools/gis" },
 };
 
 export default function GISToolsPage() {

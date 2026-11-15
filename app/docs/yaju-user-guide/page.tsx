@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "YAJU User Guide PDF | Simple Field, Document and Image Conversions",
   description:
     "Printable YAJU user guide explaining how to use YAJU Field Tools, YAJU Documents and YAJU Images for simple conversions.",
+  alternates: { canonical: "/docs/yaju-user-guide" },
 };
 
 const documentTools = [

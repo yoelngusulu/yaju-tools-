@@ -33,6 +33,7 @@ const reasons = [
 export const metadata = {
   title: { absolute: "About YAJU: Field, PDF & Image Tools" },
   description: "Discover YAJU Field Tools, PDF and image utilities in one practical productivity workspace.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -12,6 +13,10 @@ import WaitlistForm from "@/components/WaitlistForm";
 import CallToAction from "@/components/CallToAction";
 import AIAssistant from "@/components/AIAssistant";
 import ConditionalGoogleAd from "@/components/ConditionalGoogleAd";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function Home({
   searchParams,
