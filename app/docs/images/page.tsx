@@ -5,6 +5,7 @@ import { ArrowRight, Image as ImageIcon } from "lucide-react";
 export const metadata: Metadata = {
   title: "YAJU Images Guide | YAJU Documentation",
   description: "Learn how to convert and compress images with YAJU Images.",
+  alternates: { canonical: "/docs/images" },
 };
 
 const guides = [
