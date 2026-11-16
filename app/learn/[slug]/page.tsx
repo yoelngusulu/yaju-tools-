@@ -29,7 +29,7 @@ export default async function LearningArticlePage({ params }: PageProps) {
     <main className="min-h-screen bg-white px-5 py-12 sm:py-16">
       <article className="mx-auto max-w-4xl">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
-          <Link href="/learn" className="font-medium text-blue-700 hover:text-blue-900">Learning Center</Link>
+          <Link href="/learn" className="font-medium text-blue-700 hover:text-blue-900">Knowledge Hub</Link>
           <span className="mx-2">/</span>
           <span>{article.category}</span>
         </nav>
@@ -55,7 +55,7 @@ export default async function LearningArticlePage({ params }: PageProps) {
           </aside>
         )}
         <footer className="mt-12 border-t border-slate-200 pt-6">
-          <Link href="/learn" className="font-semibold text-blue-700 hover:text-blue-900">← Back to Learning Center</Link>
+          <Link href="/learn" className="font-semibold text-blue-700 hover:text-blue-900">← Back to Knowledge Hub</Link>
         </footer>
       </article>
     </main>
