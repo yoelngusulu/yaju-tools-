@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ToolLearningContent from "@/components/ToolLearningContent";
 import { ArrowLeft } from "lucide-react";
 import proj4 from "proj4";
 import {
@@ -2812,22 +2813,7 @@ export default function CoordinatesConverterPage() {
             </div>
           )}
 
-          <div className="mt-10 rounded-lg border border-gray-200 bg-gray-50 p-5 text-center">
-            <h2 className="text-xl font-bold text-gray-900">
-              Support This Free GIS Tool
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-              If this coordinates converter helps your GIS, survey or mapping work, you can support DocMaster so we can keep improving free tools.
-            </p>
-
-            <a
-              href="mailto:yoelngusulu@gmail.com?subject=Support%20DocMaster%20AI"
-              className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Donate / Support
-            </a>
-          </div>
+          <ToolLearningContent variant="coordinates" />>
         </section>
       </div>
     </main>
