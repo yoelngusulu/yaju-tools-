@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ToolLearningContent from "@/components/ToolLearningContent";
 import proj4 from "proj4";
 import type {
   LayerGroup,
@@ -2254,6 +2255,7 @@ export default function DistanceAreaCalculatorPage() {
             </div>
           )}
         </section>
+        <ToolLearningContent variant="distance" />
       </div>
     </main>
   );
