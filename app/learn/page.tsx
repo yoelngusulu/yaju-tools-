@@ -3,7 +3,7 @@ import Link from "next/link";
 import { learningArticles } from "@/lib/learning/articles";
 
 export const metadata: Metadata = {
-  title: "YAJU Learning Center | GIS, Hydrology and Digital Productivity",
+  title: "YAJU Knowledge Hub | GIS, Hydrology and Digital Productivity",
   description: "Practical original guides for coordinate systems, GIS measurements, water storage planning, PDF workflows and everyday digital tasks.",
   alternates: { canonical: "/learn" },
 };
@@ -13,7 +13,7 @@ export default function LearningCenterPage() {
     <main className="min-h-screen bg-slate-50 px-5 py-14 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <header className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">YAJU Learning Center</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">YAJU Knowledge Hub</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">Practical guides for better digital and technical work</h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">Explore clear explanations, worked concepts and quality checks for GIS, hydrology, water planning and document workflows. Each guide is designed to help you understand the task, use the right inputs and review the result.</p>
         </header>
