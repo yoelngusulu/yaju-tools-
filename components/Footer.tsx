@@ -19,7 +19,11 @@ const productLinks = [
 ];
 
 const supportLinks = [
-  { label: "Learning Center", href: "/learn" },
+  { label: "Knowledge Hub", href: "/learn" },
+  { label: "Practical Examples", href: "/learn/examples" },
+  { label: "FAQ Centre", href: "/faq" },
+  { label: "What's New", href: "/whats-new" },
+  { label: "Send Feedback", href: "/feedback" },
   {
     label: "Documentation",
     href: "/docs",
