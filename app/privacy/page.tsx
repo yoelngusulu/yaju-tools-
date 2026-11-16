@@ -140,13 +140,14 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-950">9. Contact</h2>
+            <h2 className="text-2xl font-bold text-gray-950">9. Feedback submissions</h2>
+            <p className="mt-4 leading-7">If you submit feedback, YAJU processes the category, message, optional reply email and page reference you provide. Basic request-security information may also be processed to prevent abuse. Feedback is used to review product quality, investigate reported issues and improve the service.</p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-950">10. Contact</h2>
             <p className="mt-4 leading-7">
-              YAJU does not currently publish a dedicated privacy-support email
-              address or telephone number. We will add a direct privacy contact
-              method to this page when one is available. Do not include passwords,
-              payment credentials or other sensitive information in public
-              messages or website feedback.
+              YAJU provides a website feedback form for product suggestions and issue reports. Submissions are stored so the team can review and respond to feedback. Providing an email address is optional and should only be used if you want a reply. Do not include passwords, payment credentials, confidential files or other sensitive information. The feedback form is not a secure channel for formal privacy or legal requests.
             </p>
           </section>
         </div>
