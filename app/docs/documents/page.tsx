@@ -84,6 +84,28 @@ export default function DocumentsGuidePage() {
             </article>
           ))}
         </section>
+        <section className="mt-10 rounded-xl border border-blue-100 bg-blue-50 p-6">
+          <h2 className="text-2xl font-bold text-gray-950">Before processing a PDF</h2>
+          <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-gray-700">
+            <li>Keep an unchanged copy of the original document, especially when it is a report, contract or official record.</li>
+            <li>Check that the file opens correctly and that its pages are in the intended order and orientation.</li>
+            <li>For password-protected files, make sure you are authorised to process the document and have the required password.</li>
+            <li>Review your organisation's rules before uploading confidential or personal information to an online service.</li>
+          </ul>
+        </section>
+
+        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-2xl font-bold text-gray-950">Check the result before sharing</h2>
+          <p className="mt-3 leading-7 text-gray-600">A completed conversion or download does not by itself confirm that every page has been preserved accurately. Open the output and check the page count, order, text, tables, images, page breaks and file readability.</p>
+          <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-gray-700">
+            <li><strong>Word:</strong> review headings, paragraphs, tables and page layout.</li>
+            <li><strong>Excel:</strong> verify extracted values, column alignment, dates and formulas where applicable.</li>
+            <li><strong>PowerPoint:</strong> check slide order, text placement, images and formatting.</li>
+            <li><strong>Compressed PDF:</strong> zoom in on small text, maps, drawings and signatures to confirm they remain legible.</li>
+          </ul>
+          <p className="mt-4 leading-7 text-gray-600">Scanned pages may need optical character recognition (OCR) before their text can be edited or searched. Complex layouts and scanned tables may require manual correction after conversion.</p>
+        </section>
+
       </div>
     </main>
   );
