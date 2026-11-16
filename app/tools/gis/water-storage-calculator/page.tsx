@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ToolLearningContent from "@/components/ToolLearningContent";
 import Link from "next/link";
 import { ArrowLeft, Calculator, CloudRain, Droplets, Gauge, MapPinned, Sprout } from "lucide-react";
 import { calculateIrrigationRequirement } from "@/features/hydrology/domain/irrigation";
@@ -757,6 +758,7 @@ export default function WaterStorageCalculatorPage() {
         <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950 sm:p-5">
           <strong>Engineering and data note:</strong> This calculator provides preliminary sizing estimates. NASA POWER rainfall is a gridded climate estimate and may differ from a local rain gauge. The mapped polygon is measured as a horizontal planimetric area from its geographic vertices. For sloping roofs, this is plan area, not true roof surface area. For larger or cadastral catchments, confirm the boundary and use suitable projected survey measurements. For a natural watershed, this polygon area is only a geometric measurement; this calculator does not estimate calibrated outlet discharge. Use an appropriate rainfall-runoff model and site-specific hydrological parameters for watershed design. Rainwater sizing here uses annual rainfall and dry-period demand, not a daily rainfall-runoff simulation. Confirm site-specific inputs and applicable engineering standards before final design.
         </section>
+        <ToolLearningContent variant="water" />
       </div>
     </main>
   );

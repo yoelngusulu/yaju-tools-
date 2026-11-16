@@ -30,6 +30,7 @@ export default function DocumentationPage() {
           <p className="mt-5 max-w-3xl text-lg leading-8 text-gray-600">YAJU is built so users can move from upload to finished result quickly. These guides explain how to complete common field, document and image tasks.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/docs/yaju-user-guide" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"><Printer size={18} />Printable PDF Guide</Link>
+            <Link href="/learn" className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 font-semibold text-blue-600 transition hover:bg-blue-50">Learning Center<ArrowRight size={18} /></Link>
             <Link href="/docs/getting-started" className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 py-3 font-semibold text-blue-600 transition hover:bg-blue-50">Start Here<ArrowRight size={18} /></Link>
             <Link href="/tools" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 font-semibold text-gray-800 transition hover:border-blue-300 hover:text-blue-600">Open Tools</Link>
           </div>

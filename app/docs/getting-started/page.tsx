@@ -57,6 +57,22 @@ export default function GettingStartedPage() {
           ))}
         </section>
 
+        <section className="mt-10 rounded-lg border border-blue-100 bg-blue-50 p-6">
+          <h2 className="text-2xl font-bold text-gray-950">A few checks before you start</h2>
+          <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-gray-700">
+            <li><strong>For coordinate work:</strong> identify the source coordinate reference system, datum, units and UTM zone before converting. Do not guess a CRS from the coordinate values alone.</li>
+            <li><strong>For document and image work:</strong> keep an original copy and review the processed file before sharing it.</li>
+            <li><strong>For calculations:</strong> check the input units and assumptions, then compare important results with an independent source or method.</li>
+            <li><strong>For sensitive information:</strong> review the Privacy Policy and your organisation's data-handling rules before uploading files.</li>
+          </ul>
+        </section>
+
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-950">Learn more before using a tool</h2>
+          <p className="mt-3 leading-7 text-gray-600">The YAJU Learning Center explains the concepts behind selected tools, including coordinate reference systems, GIS measurements, water-storage planning and PDF preparation. Use these guides to understand the inputs and checks that affect your results.</p>
+          <Link href="/learn" className="mt-4 inline-flex items-center gap-2 font-semibold text-blue-600 hover:text-blue-700">Explore the Learning Center <ArrowRight size={17} /></Link>
+        </section>
+
         <section className="mt-10 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-950">Choose a workspace</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">

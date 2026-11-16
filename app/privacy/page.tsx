@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -7,14 +6,6 @@ export const metadata: Metadata = {
     "Learn how YAJU handles account information, uploaded files, temporary processing, cookies and advertising.",
   alternates: { canonical: "/privacy" },
 };
-
-const retentionRows = [
-  { plan: "Free", period: "24 hours" },
-  { plan: "Daily Pass", period: "24 hours" },
-  { plan: "Pro Monthly", period: "7 days" },
-  { plan: "Pro Yearly", period: "7 days" },
-  { plan: "Power User", period: "30 days" },
-];
 
 export default function PrivacyPage() {
   return (
@@ -27,7 +18,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mt-4 text-sm text-gray-500">
-          Last updated: 11 October 2026
+          Last updated: 16 November 2026
         </p>
 
         <div className="mt-10 space-y-10 text-gray-700">
@@ -67,48 +58,19 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-950">
-              3. Uploaded files and temporary storage
+              3. Uploaded files and processing
             </h2>
             <p className="mt-4 leading-7">
-              Uploaded files are used only to perform the operation you request.
-              YAJU is a temporary processing workspace and is not a permanent cloud
-              storage service. Do not use YAJU as the only copy of an important
-              file.
+              Files and data you submit are processed to provide the operation you request.
+              The processing steps and whether temporary or account-related storage is used
+              can vary by tool and feature. YAJU is not intended to be a permanent cloud
+              storage or backup service.
             </p>
             <p className="mt-4 leading-7">
-              Tools that do not require persistent storage process files
-              temporarily. When persistent account storage is enabled, stored files
-              will receive an expiry time based on the active plan and will be
-              scheduled for deletion after the period below.
-            </p>
-
-            <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-100 text-gray-950">
-                  <tr>
-                    <th className="px-5 py-3 font-semibold">Plan</th>
-                    <th className="px-5 py-3 font-semibold">
-                      Maximum retention
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {retentionRows.map((item) => (
-                    <tr key={item.plan}>
-                      <td className="px-5 py-3 font-medium text-gray-900">
-                        {item.plan}
-                      </td>
-                      <td className="px-5 py-3">{item.period}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <p className="mt-4 text-sm leading-6 text-gray-600">
-              Operational backups, security logs or legal records may be kept
-              separately for a limited period where reasonably necessary. These
-              records are not presented as permanent user file storage.
+              Do not assume that a file is deleted immediately after processing or that a
+              particular retention period applies to every tool. Keep your own copy of
+              important files and avoid uploading information that you do not need the tool
+              to process.
             </p>
           </section>
 
@@ -130,11 +92,12 @@ export default function PrivacyPage() {
             </h2>
             <p className="mt-4 leading-7">
               YAJU may use essential cookies for sign-in, security and usage
-              limits. Free tools may also display Google AdSense advertising.
-              Google and its partners may use cookies or similar technologies to
-              deliver and measure ads, subject to consent requirements and Google&apos;s
-              own policies. Browser settings and available consent controls can be
-              used to manage non-essential cookies.
+              limits. Where advertising is enabled, YAJU may display third-party
+              ads such as Google AdSense. The advertising provider and its partners
+              may use cookies or similar technologies to deliver, personalise where
+              permitted, and measure ads, subject to applicable consent requirements
+              and the provider&apos;s policies. Browser settings and any available
+              consent controls can be used to manage non-essential cookies.
             </p>
           </section>
 
@@ -177,17 +140,31 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-950">9. Contact</h2>
+            <h2 className="text-2xl font-bold text-gray-950">9. Feedback submissions</h2>
             <p className="mt-4 leading-7">
-              For privacy questions or account-data requests, use the contact
-              details provided on the{" "}
-              <Link
-                href="/about"
-                className="font-semibold text-blue-600 hover:text-blue-700"
-              >
-                About YAJU
-              </Link>{" "}
-              page.
+              If you submit feedback, YAJU processes the category, message, optional
+              reply email and page reference you provide. Basic request-security
+              information may also be processed to prevent abuse. Feedback is used
+              to review product quality, investigate reported issues and improve
+              the service.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-950">10. Contact and privacy requests</h2>
+            <p className="mt-4 leading-7">
+              For a privacy question or a request to access, correct or delete
+              eligible personal information, use the YAJU feedback form and select
+              “General feedback”. Briefly describe the request and provide an email
+              address if you want YAJU to contact you or need the request linked to
+              an account. YAJU may ask for additional information to verify a
+              request before taking action.
+            </p>
+            <p className="mt-4 leading-7">
+              Do not include passwords, payment credentials, identity documents,
+              confidential files or other sensitive information in the feedback
+              form. The form is intended to start a request, not to receive
+              sensitive supporting documents or legal notices.
             </p>
           </section>
         </div>

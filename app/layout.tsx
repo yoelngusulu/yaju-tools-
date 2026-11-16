@@ -16,10 +16,12 @@ export const metadata: Metadata = {
     template: "%s | YAJU",
   },
   description:
-    "Use free YAJU Utility tools to merge, split and compress PDFs, convert images to PDF, convert coordinates and calculate field measurements online.",
+    "Explore practical GIS, hydrology and fieldwork guides alongside online PDF, image and coordinate tools from YAJU.",
   applicationName: "YAJU",
   openGraph: {
     siteName: "YAJU",
+    title: "YAJU Tools: GIS, Hydrology, PDF & Image Utilities",
+    description: "Practical online tools, detailed tutorials and worked examples for fieldwork, documents and everyday digital tasks.",
     type: "website",
   },
   icons: {
