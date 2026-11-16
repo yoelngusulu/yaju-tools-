@@ -66,6 +66,29 @@ export default function ImagesGuidePage() {
             </article>
           ))}
         </section>
+        <section className="mt-10 rounded-xl border border-blue-100 bg-blue-50 p-6">
+          <h2 className="text-2xl font-bold text-gray-950">Choose the right image format</h2>
+          <p className="mt-3 leading-7 text-gray-700">JPG is commonly used for photographs and can produce smaller files through lossy compression. PNG is useful for graphics that need sharp edges or transparency. The best format depends on the image content and how it will be used; converting formats does not automatically improve image quality.</p>
+          <ul className="mt-4 list-disc space-y-2 pl-6 leading-7 text-gray-700">
+            <li>Use JPG for many everyday photographs when a smaller file is important.</li>
+            <li>Use PNG when transparency or crisp interface graphics must be preserved.</li>
+            <li>Keep the original file when image quality or future editing matters.</li>
+          </ul>
+        </section>
+
+        <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-2xl font-bold text-gray-950">Check image quality after compression</h2>
+          <p className="mt-3 leading-7 text-gray-600">Compare the processed image with the original at its intended display size. Look for blurred text, blocky edges, colour changes, banding and loss of fine detail. A smaller file is not necessarily a better file if important information becomes difficult to read.</p>
+          <h3 className="mt-5 text-lg font-semibold text-gray-950">Before creating a PDF from images</h3>
+          <ul className="mt-3 list-disc space-y-2 pl-6 leading-7 text-gray-700">
+            <li>Check that every image is upright and readable.</li>
+            <li>Arrange pages in the required order before creating the PDF.</li>
+            <li>Use consistent page orientation where practical.</li>
+            <li>Open the finished PDF and inspect every page before sending or submitting it.</li>
+          </ul>
+          <p className="mt-4 leading-7 text-gray-600">For scanned forms, maps or technical drawings, retain a high-quality original. Compression and format conversion may reduce the clarity of small labels, fine linework and handwritten details.</p>
+        </section>
+
       </div>
     </main>
   );
