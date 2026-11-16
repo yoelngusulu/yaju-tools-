@@ -141,13 +141,30 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-950">9. Feedback submissions</h2>
-            <p className="mt-4 leading-7">If you submit feedback, YAJU processes the category, message, optional reply email and page reference you provide. Basic request-security information may also be processed to prevent abuse. Feedback is used to review product quality, investigate reported issues and improve the service.</p>
+            <p className="mt-4 leading-7">
+              If you submit feedback, YAJU processes the category, message, optional
+              reply email and page reference you provide. Basic request-security
+              information may also be processed to prevent abuse. Feedback is used
+              to review product quality, investigate reported issues and improve
+              the service.
+            </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-950">10. Contact</h2>
+            <h2 className="text-2xl font-bold text-gray-950">10. Contact and privacy requests</h2>
             <p className="mt-4 leading-7">
-              YAJU provides a website feedback form for product suggestions and issue reports. Submissions are stored so the team can review and respond to feedback. Providing an email address is optional and should only be used if you want a reply. Do not include passwords, payment credentials, confidential files or other sensitive information. The feedback form is not a secure channel for formal privacy or legal requests.
+              For a privacy question or a request to access, correct or delete
+              eligible personal information, use the YAJU feedback form and select
+              “General feedback”. Briefly describe the request and provide an email
+              address if you want YAJU to contact you or need the request linked to
+              an account. YAJU may ask for additional information to verify a
+              request before taking action.
+            </p>
+            <p className="mt-4 leading-7">
+              Do not include passwords, payment credentials, identity documents,
+              confidential files or other sensitive information in the feedback
+              form. The form is intended to start a request, not to receive
+              sensitive supporting documents or legal notices.
             </p>
           </section>
         </div>
