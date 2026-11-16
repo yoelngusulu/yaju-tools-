@@ -2813,7 +2813,7 @@ export default function CoordinatesConverterPage() {
             </div>
           )}
 
-          <ToolLearningContent variant="coordinates" />>
+          <ToolLearningContent variant="coordinates" />
         </section>
       </div>
     </main>
