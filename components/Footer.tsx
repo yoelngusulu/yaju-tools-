@@ -19,6 +19,7 @@ const productLinks = [
 ];
 
 const supportLinks = [
+  { label: "Learning Center", href: "/learn" },
   {
     label: "Documentation",
     href: "/docs",
