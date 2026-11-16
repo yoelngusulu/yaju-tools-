@@ -248,4 +248,35 @@ export const learningArticles: LearningArticle[] = [
       }
     ]
   }
+  ,{
+    slug: "rainfall-data-dry-periods-and-water-balance",
+    title: "Rainfall Data, Dry Periods and Water-Balance Assessment",
+    category: "Hydrology & Water",
+    summary: "Learn how to review rainfall records, identify dry periods and interpret a simple storage water balance without confusing estimates with design decisions.",
+    readTime: "8 min read",
+    toolHref: "/tools/gis/water-storage-calculator",
+    toolLabel: "Open Water Storage Calculator",
+    sections: [
+      { heading: "Start with a fit-for-purpose rainfall record", paragraphs: [
+        "Rainfall analysis begins with the purpose of the assessment and the time step required. Daily data can support dry-spell analysis and a daily storage balance, while monthly totals are useful for seasonal summaries. Annual totals alone can hide the timing and duration of rainfall deficits.",
+        "Record the station or gridded product name, coordinates, units, observation period and retrieval date. Check whether the series represents a point gauge, an interpolated surface or a modelled grid cell; these sources have different spatial meaning and uncertainty."
+      ]},
+      { heading: "Check completeness and consistency", paragraphs: [
+        "Inspect the date sequence for missing days, duplicate dates, impossible values and changes in reporting units. Distinguish a true zero-rainfall day from a missing observation. A missing value must not automatically be treated as zero because doing so can create an artificial dry spell.",
+        "Compare totals and seasonal patterns with nearby stations or another trusted source where possible. Large differences may reflect real local variability, gauge exposure, data processing or an error that needs investigation."
+      ], bullets: ["Confirm that dates are continuous and unique.", "Count missing observations by month and year.", "Check units and documented changes in station location or instrument.", "Keep the raw series unchanged and document quality-control decisions."]},
+      { heading: "Define dry periods transparently", paragraphs: [
+        "A dry period is not a universal fixed number of days. Define the threshold used in the analysis, such as consecutive days below a specified daily rainfall amount, and state whether trace rainfall interrupts the sequence. The threshold should suit the purpose and data resolution.",
+        "For a water-supply assessment, a meteorological dry spell is only one part of the problem. Catchment response, soil moisture, runoff losses, groundwater contribution, demand and storage capacity influence whether a rainfall deficit becomes a supply shortage."
+      ]},
+      { heading: "Understand a simple storage water balance", paragraphs: [
+        "A basic time-step balance updates storage using previous storage plus inflow, minus demand and losses. The result is constrained by usable tank capacity: excess water may overflow, while a negative balance indicates unmet demand or a required supplementary source.",
+        "For rainwater harvesting, inflow can be estimated from rainfall depth, contributing roof area, runoff coefficient and collection efficiency. Use consistent units: one millimetre of rain over one square metre represents one litre before losses."
+      ], bullets: ["Track storage at the same time step as rainfall and demand.", "Apply usable capacity, not only geometric volume.", "Represent overflow and unmet demand explicitly.", "Test alternative demand, rainfall and efficiency assumptions."]},
+      { heading: "Interpret results and communicate limitations", paragraphs: [
+        "Useful outputs include minimum storage, overflow volume, number of shortage days and the longest period of unmet demand. Review more than one year and consider dry-year conditions rather than relying on a single average year.",
+        "A simple water balance is a planning aid, not a complete hydrological or water-supply design. It does not establish source sustainability, water quality, structural adequacy or regulatory compliance. Final decisions require site-specific data, documented assumptions and appropriate professional review."
+      ]}
+    ]
+  }
 ];
