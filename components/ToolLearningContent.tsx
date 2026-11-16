@@ -11,6 +11,7 @@ const content: Record<Variant, {
   sections: { title: string; body: string; bullets?: string[] }[];
   guide: string;
   guideLabel: string;
+  faqs: { question: string; answer: string }[];
 }> = {
   coordinates: {
     eyebrow: "Coordinate conversion guide",
@@ -18,6 +19,11 @@ const content: Record<Variant, {
     intro: "Coordinate conversion changes how a location is represented. A reliable result depends on identifying the source coordinate reference system, datum, axis order, units and (for UTM) zone and hemisphere.",
     guide: "/learn/coordinate-systems-and-coordinate-conversion",
     guideLabel: "Read the coordinate systems guide",
+    faqs: [
+      { question: "Can I convert coordinates without knowing the source CRS?", answer: "You can change coordinate notation only when the source values and reference system are known. A coordinate pair alone cannot reliably identify its datum or projection." },
+      { question: "Are WGS 84 and Arc 1960 interchangeable?", answer: "No. They are different datums. Use the correct source datum and an appropriate transformation method for the project." },
+      { question: "How do I check a converted coordinate?", answer: "Plot a sample in a GIS using a trusted reference layer and confirm the expected location, axis order, UTM zone and hemisphere." }
+    ],
     sections: [
       { title: "Choose the correct input format", body: "Decimal Degrees (DD) use decimal values for latitude and longitude. Degrees, Minutes, Seconds (DMS) split each angle into degrees, minutes and seconds. UTM uses eastings and northings in metres, together with a zone, hemisphere and datum. Select the format that matches your source data; do not infer it only from the number of digits.", bullets: ["Latitude is the north–south coordinate; longitude is east–west.", "South and west values are negative in signed decimal-degree notation.", "UTM coordinates require the correct zone and hemisphere."] },
       { title: "WGS 84 and Arc 1960", body: "The converter provides WGS 84 / UTM and Arc 1960 / UTM options, as well as a custom Proj4 definition. WGS 84 and Arc 1960 are different datums. If your source is Arc 1960, do not label it WGS 84 without applying an appropriate datum transformation. Use project-approved parameters for survey-grade work." },
@@ -31,6 +37,11 @@ const content: Record<Variant, {
     intro: "A measurement is only as reliable as the geometry, coordinate reference system and measurement method behind it. Check these inputs before using a result in a map, report or engineering calculation.",
     guide: "/learn/measuring-distance-and-area-in-gis",
     guideLabel: "Read the distance and area guide",
+    faqs: [
+      { question: "Should I measure in degrees or metres?", answer: "For many local linear measurements, a suitable projected CRS with metre units is more practical. Select a CRS appropriate to the study area and task." },
+      { question: "How many square metres are in a hectare?", answer: "One hectare equals 10,000 square metres." },
+      { question: "Can I use this result for cadastral or construction approval?", answer: "Use the approved survey method and applicable standards for high-consequence work. An online calculator is not a certified survey." }
+    ],
     sections: [
       { title: "Prepare your coordinates", body: "Enter points in the supported format and keep their labels in the intended order. For a line or boundary, check that vertices describe the correct path and that no points have been accidentally omitted or duplicated. Review the plotted geometry before accepting the result." },
       { title: "Use an appropriate CRS", body: "Geographic coordinates are expressed in degrees, while projected systems commonly use metres. Select a suitable CRS for the study area and measurement purpose. Confirm the datum, zone, units and area of use; assigning a CRS is not the same as transforming coordinates." },
@@ -44,6 +55,11 @@ const content: Record<Variant, {
     intro: "Preliminary storage sizing combines demand, source reliability, rainfall, catchment area and operating assumptions. Annual rainfall alone does not show whether enough water will be available during a long dry period.",
     guide: "/learn/water-storage-sizing-rainwater-and-borehole",
     guideLabel: "Read the water storage sizing guide",
+    faqs: [
+      { question: "Is annual rainfall enough to size a storage tank?", answer: "Not by itself. Seasonal distribution, daily demand, dry-period duration, catchment losses and storage behaviour also matter." },
+      { question: "Does a pump rating prove borehole sustainable yield?", answer: "No. Sustainable yield should be assessed using suitable pumping-test evidence and aquifer response, not pump rating alone." },
+      { question: "Are automatic rainfall values local gauge measurements?", answer: "Not necessarily. Gridded rainfall products are estimates for grid cells and can differ from observations at a local rain gauge." }
+    ],
     sections: [
       { title: "Rainwater harvesting", body: "A simplified yield estimate uses rainfall depth, catchment area, runoff coefficient and collection efficiency. Keep units consistent: rainfall in metres multiplied by area in square metres gives cubic metres; multiply by 1,000 for litres. Select coefficients that reflect the actual roof or catchment surface and losses." },
       { title: "Dry-period storage and demand", body: "Consider daily demand and the timing of rainfall, not only the annual total. A monthly or daily water-balance assessment is more informative than annual yield alone when storage reliability matters. Test alternative demand and dry-period assumptions." },
@@ -69,6 +85,19 @@ export default function ToolLearningContent({ variant }: { variant: Variant }) {
           </article>
         ))}
       </div>
+      <section className="mt-8">
+        <h3 className="text-xl font-bold text-slate-950">Frequently asked questions</h3>
+        <div className="mt-4 divide-y divide-slate-200 rounded-xl border border-slate-200">
+          {item.faqs.map((faq) => (
+            <details key={faq.question} className="group p-4">
+              <summary className="cursor-pointer list-none font-semibold text-slate-900 marker:hidden">
+                <span className="flex items-center justify-between gap-4">{faq.question}<span className="text-blue-700 transition group-open:rotate-45">+</span></span>
+              </summary>
+              <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
       <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
         <p className="max-w-2xl text-sm leading-6 text-slate-600">For detailed examples, practical checks and limitations, see the full YAJU Learning Center guide.</p>
         <Link href={item.guide} className="inline-flex items-center rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800">{item.guideLabel}</Link>
