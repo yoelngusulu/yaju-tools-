@@ -124,6 +124,7 @@ export default function Navbar() {
               {toolLinks.map((tool) => { const Icon = tool.icon; return <Link key={tool.href} href={tool.href} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-700 transition hover:bg-blue-50 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"><Icon size={18} /><span>{tool.label}</span></Link>; })}
             </div>
           </div>
+          <Link href="/learn" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">Learn</Link>
           <Link href="/pricing" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">Pricing</Link>
           <Link href="/about" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">About</Link>
           <Link href="/partners" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">Become a Partner</Link>
@@ -151,6 +152,7 @@ export default function Navbar() {
         <div><button type="button" onClick={() => setIsToolsOpen((current) => !current)} className="flex w-full items-center justify-between rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Tools<ChevronDown size={18} className={`transition-transform ${isToolsOpen ? "rotate-180" : ""}`} /></button>
           {isToolsOpen && <div className="ml-4 mt-1 space-y-1 border-l-2 border-blue-100 pl-3 dark:border-slate-700">{toolLinks.map((tool) => { const Icon = tool.icon; return <Link key={tool.href} href={tool.href} onClick={closeMobileMenu} className="flex items-center gap-3 rounded-xl px-4 py-3 text-gray-600 dark:text-slate-300"><Icon size={18} /><span>{tool.label}</span></Link>; })}</div>}
         </div>
+        <Link href="/learn" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Learning Center</Link>
         <Link href="/pricing" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Pricing</Link>
         <Link href="/about" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">About</Link>
         <Link href="/partners" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Become a Partner</Link>
