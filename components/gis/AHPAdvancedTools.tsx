@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Download, FileDown, FileUp, FolderOpen, Save, SlidersHorizontal } from "lucide-react";
 import {
+  buildPairwiseMatrix,
   calculateAHPWeights,
   pairKey,
   type AHPResult,
@@ -161,9 +162,15 @@ export default function AHPAdvancedTools({ projectName, objective, criteria, jud
       }
       const expected = (payload.criteria.length * (payload.criteria.length - 1)) / 2;
       const entries = Object.entries(payload.judgments);
-      if (entries.length !== expected || entries.some(([key, judgment]) => !/^\d+-\d+$/.test(key) || !judgment || !["left", "right", "equal"].includes(judgment.preference) || (judgment.preference === "equal" ? judgment.intensity !== 1 : !Number.isInteger(judgment.intensity) || judgment.intensity < 2 || judgment.intensity > 9))) {
+      const expectedKeys = new Set<string>();
+      for (let row = 0; row < payload.criteria.length; row += 1) {
+        for (let column = row + 1; column < payload.criteria.length; column += 1) expectedKeys.add(pairKey(row, column));
+      }
+      if (entries.length !== expected || entries.some(([key, judgment]) => !expectedKeys.has(key) || !judgment || !["left", "right", "equal"].includes(judgment.preference) || (judgment.preference === "equal" ? judgment.intensity !== 1 : !Number.isInteger(judgment.intensity) || judgment.intensity < 2 || judgment.intensity > 9))) {
         throw new Error("Project comparison data is incomplete or invalid.");
       }
+      const checkedMatrix = buildPairwiseMatrix(payload.criteria.length, payload.judgments);
+      calculateAHPWeights(checkedMatrix as number[][]);
       onLoad({
         projectName: typeof payload.projectName === "string" ? payload.projectName : "Imported AHP Analysis",
         objective: typeof payload.objective === "string" ? payload.objective : "",
