@@ -1,4 +1,4 @@
-import { Database, Droplets, MapPinned, Ruler } from "lucide-react";
+import { Database, Droplets, MapPinned, Ruler, Scale } from "lucide-react";
 
 import ToolHubPage from "@/components/ToolHubPage";
 
@@ -28,6 +28,15 @@ const fieldTools = [
     href: "/tools/gis/distance-area-calculator",
     icon: Ruler,
     badge: "Live",
+    status: "available" as const,
+  },
+  {
+    title: "AHP Criteria Weighting",
+    description:
+      "Calculate relative GIS criterion weights using Saaty pairwise comparisons and consistency analysis.",
+    href: "/tools/gis/ahp-calculator",
+    icon: Scale,
+    badge: "New",
     status: "available" as const,
   },
   {
