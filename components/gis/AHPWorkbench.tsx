@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Info, Plus, Printer, RotateCcw, Scale, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
+import AHPAdvancedTools from "@/components/gis/AHPAdvancedTools";
 import {
   buildPairwiseMatrix, calculateAHPWeights, hasCompleteJudgments,
   MAX_CRITERIA, MIN_CRITERIA, pairKey,
@@ -70,6 +71,13 @@ export default function AHPWorkbench() {
   const [objective, setObjective] = useState("");
   const [criteria, setCriteria] = useState<string[]>(INITIAL_CRITERIA);
   const [judgments, setJudgments] = useState<PairwiseJudgments>({});
+
+  function loadProject(data: { projectName: string; objective: string; criteria: string[]; judgments: PairwiseJudgments }) {
+    setProjectName(data.projectName);
+    setObjective(data.objective);
+    setCriteria(data.criteria);
+    setJudgments(data.judgments);
+  }
 
   const pairs = useMemo<Pair[]>(() => {
     const output: Pair[] = [];
@@ -191,6 +199,8 @@ export default function AHPWorkbench() {
             <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4"><h3 className="font-semibold text-slate-900">Calculation method</h3><p className="mt-2 text-sm leading-6 text-slate-600">YAJU estimates the principal right eigenvector by power iteration, normalizes the priority vector so weights sum to 1, estimates λ max from A × w, then calculates CI = (λ max − n) / (n − 1) and CR = CI / RI.</p><p className="mt-2 text-xs leading-5 text-slate-500">Random Index values use the classic Saaty (1980) series for matrix orders 1–15. CR ≤ 0.10 is a conventional guideline, not proof that selected criteria or their ratings are scientifically appropriate.</p></div>
           </>}
         </section>
+
+        <AHPAdvancedTools projectName={projectName} objective={objective} criteria={criteria} judgments={judgments} matrix={matrix} result={result} onLoad={loadProject} />
 
         <section className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-5 sm:p-6"><h2 className="font-bold text-slate-900">Using AHP weights in GIS</h2><p className="mt-2 text-sm leading-6 text-slate-600">This calculator produces criterion weights only. It does not reclassify raster layers or create a suitability map. After standardizing criterion rasters to a comparable scale, apply the weights in a GIS weighted overlay or weighted linear combination workflow.</p><div className="mt-3 overflow-x-auto rounded-xl border border-blue-100 bg-white px-4 py-3 text-center font-mono text-sm font-semibold text-blue-900">Suitability Index = Σ (criterion weight × standardized criterion value)</div></section>
         <footer className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-500"><p className="font-semibold text-slate-700">Research note</p><p className="mt-1">AHP results depend on the criteria selected, their definitions, scale direction and decision-maker judgments. Document the rationale and data sources for your criteria, and review the results for the specific study.</p></footer>
