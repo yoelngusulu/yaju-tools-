@@ -140,7 +140,6 @@ export default function Navbar() {
           </div>
           <Link href="/pricing" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">Pricing</Link>
           <Link href="/about" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">About</Link>
-          <Link href="/partners" className="transition-colors hover:text-blue-600 dark:hover:text-blue-400">Become a Partner</Link>
         </div>
 
         <div className="hidden min-w-[238px] items-center justify-end gap-3 lg:flex">
@@ -179,7 +178,6 @@ export default function Navbar() {
         </div>
         <Link href="/pricing" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Pricing</Link>
         <Link href="/about" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">About</Link>
-        <Link href="/partners" onClick={closeMobileMenu} className="rounded-xl px-4 py-3 font-medium text-gray-700 dark:text-slate-200">Become a Partner</Link>
         {!isAuthLoading && <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-200 pt-5 dark:border-slate-700">{user ? <><Link href="/dashboard" onClick={closeMobileMenu} className="rounded-xl border border-blue-600 px-4 py-3 text-center font-semibold text-blue-600">Dashboard</Link><a href="/logout" className="rounded-xl bg-red-600 px-4 py-3 text-center font-semibold text-white">Logout</a></> : <><Link href="/login" onClick={closeMobileMenu} className="rounded-xl border border-blue-600 px-4 py-3 text-center font-semibold text-blue-600">Login</Link><Link href="/register" onClick={closeMobileMenu} className="rounded-xl bg-blue-600 px-4 py-3 text-center font-semibold text-white">Sign Up</Link></>}</div>}
       </div></div>}
     </nav>
