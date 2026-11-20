@@ -33,7 +33,6 @@ type ProjectFile = {
 
 const SAATY_VALUES = [1 / 9, 1 / 8, 1 / 7, 1 / 6, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 const safeBase = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "criterion";
-const csv = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
