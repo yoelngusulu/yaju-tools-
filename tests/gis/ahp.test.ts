@@ -58,7 +58,8 @@ test("uses Saaty's classic Random Index values through 15 criteria", () => {
 
 test("rejects non-reciprocal matrices and invalid intensities", () => {
   assert.throws(() => calculateAHPWeights([[1, 3, 5], [1 / 3, 1, 2], [1 / 4, 1 / 2, 1]]), /reciprocal/);
-  assert.throws(() => buildPairwiseMatrix(2, { [pairKey(0, 1)]: { preference: "left", intensity: 10 } }), /integer from 1 to 9/);
+  assert.throws(() => buildPairwiseMatrix(2, { [pairKey(0, 1)]: { preference: "left", intensity: 1 } }), /from 2 to 9/);
+  assert.throws(() => buildPairwiseMatrix(2, { [pairKey(0, 1)]: { preference: "left", intensity: 10 } }), /from 2 to 9/);
 });
 
 test("rejects unsupported matrix sizes", () => {

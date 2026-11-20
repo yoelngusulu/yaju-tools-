@@ -11,7 +11,7 @@ import {
 } from "@/lib/gis/ahp";
 
 const INITIAL_CRITERIA = ["Criterion 1", "Criterion 2", "Criterion 3", "Criterion 4"];
-const SAATY_OPTIONS = Array.from({ length: 9 }, (_, index) => index + 1);
+const SAATY_OPTIONS = Array.from({ length: 8 }, (_, index) => index + 2);
 const displayName = (name: string, index: number) => name.trim() || "Criterion " + String(index + 1);
 const numberText = (value: number, digits = 4) => value.toFixed(digits);
 const percentage = (value: number) => (value * 100).toFixed(2) + "%";

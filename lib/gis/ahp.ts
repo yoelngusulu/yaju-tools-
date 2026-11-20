@@ -49,8 +49,8 @@ export function buildPairwiseMatrix(criteriaCount: number, judgments: PairwiseJu
       if (!judgment) continue;
       if (!["left", "right", "equal"].includes(judgment.preference)) throw new Error("Pairwise comparison preference is invalid.");
       const intensity = judgment.preference === "equal" ? 1 : judgment.intensity;
-      if (!Number.isInteger(intensity) || intensity < 1 || intensity > 9) {
-        throw new Error("Pairwise comparison intensity must be an integer from 1 to 9.");
+      if (judgment.preference !== "equal" && (!Number.isInteger(intensity) || intensity < 2 || intensity > 9)) {
+        throw new Error("A non-equal Saaty comparison intensity must be an integer from 2 to 9; use equal importance for 1.");
       }
       const value = judgment.preference === "equal" ? 1 : judgment.preference === "left" ? intensity : 1 / intensity;
       matrix[row][column] = value;
