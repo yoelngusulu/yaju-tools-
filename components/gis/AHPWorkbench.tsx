@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Info, Plus, Printer, RotateCcw, Scale, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
+import styles from "./AHPWorkbench.module.css";
 import {
   buildPairwiseMatrix, calculateAHPWeights, hasCompleteJudgments,
   MAX_CRITERIA, MIN_CRITERIA, pairKey,
@@ -106,7 +107,7 @@ export default function AHPWorkbench() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-16">
+    <main className={`${styles.workbench} min-h-screen bg-slate-50 pb-16`}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Link href="/tools/gis" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50"><ArrowLeft size={16} /> Back to GIS Tools</Link>
         <header className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
