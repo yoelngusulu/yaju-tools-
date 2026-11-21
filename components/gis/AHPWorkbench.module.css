@@ -1,0 +1,170 @@
+.workbench {
+  color-scheme: light;
+}
+
+:global(.dark) .workbench {
+  color-scheme: dark;
+  color: #e2e8f0;
+}
+
+/* Local surfaces: keep the calculator legible without changing shared theme rules. */
+:global(.dark) .workbench :global([class~="bg-white"]) {
+  background-color: #0f172a;
+}
+
+:global(.dark) .workbench :global([class~="bg-slate-50"]),
+:global(.dark) .workbench :global([class~="bg-slate-50/60"]),
+:global(.dark) .workbench :global([class~="bg-slate-50/70"]) {
+  background-color: #111c2f;
+}
+
+:global(.dark) .workbench :global([class~="bg-slate-100"]) {
+  background-color: #1e293b;
+}
+
+:global(.dark) .workbench :global([class~="bg-blue-50"]),
+:global(.dark) .workbench :global([class~="bg-blue-50/70"]) {
+  background-color: rgba(30, 58, 138, 0.32);
+}
+
+:global(.dark) .workbench :global([class~="bg-emerald-50"]) {
+  background-color: rgba(6, 78, 59, 0.38);
+}
+
+:global(.dark) .workbench :global([class~="bg-amber-50"]) {
+  background-color: rgba(120, 53, 15, 0.38);
+}
+
+:global(.dark) .workbench :global([class~="bg-red-50"]) {
+  background-color: rgba(127, 29, 29, 0.38);
+}
+
+/* Set muted, body, and accent text to colors appropriate for dark surfaces. */
+:global(.dark) .workbench :global([class~="text-slate-950"]),
+:global(.dark) .workbench :global([class~="text-slate-900"]),
+:global(.dark) .workbench :global([class~="text-slate-800"]) {
+  color: #f1f5f9;
+}
+
+:global(.dark) .workbench :global([class~="text-slate-700"]),
+:global(.dark) .workbench :global([class~="text-slate-600"]) {
+  color: #cbd5e1;
+}
+
+:global(.dark) .workbench :global([class~="text-slate-500"]),
+:global(.dark) .workbench :global([class~="text-slate-400"]) {
+  color: #94a3b8;
+}
+
+:global(.dark) .workbench :global([class~="text-slate-300"]) {
+  color: #94a3b8;
+}
+
+:global(.dark) .workbench :global([class~="text-blue-900"]),
+:global(.dark) .workbench :global([class~="text-blue-800"]) {
+  color: #bfdbfe;
+}
+
+:global(.dark) .workbench :global([class~="text-blue-700"]),
+:global(.dark) .workbench :global([class~="text-blue-600"]) {
+  color: #93c5fd;
+}
+
+:global(.dark) .workbench :global([class~="text-emerald-900"]),
+:global(.dark) .workbench :global([class~="text-emerald-800"]) {
+  color: #a7f3d0;
+}
+
+:global(.dark) .workbench :global([class~="text-amber-900"]),
+:global(.dark) .workbench :global([class~="text-amber-800"]) {
+  color: #fde68a;
+}
+
+:global(.dark) .workbench :global([class~="text-red-800"]),
+:global(.dark) .workbench :global([class~="text-red-900"]) {
+  color: #fecaca;
+}
+
+/* Borders, reciprocal matrix rows, focus, hover, and disabled controls. */
+:global(.dark) .workbench :global([class~="border-slate-100"]),
+:global(.dark) .workbench :global([class~="border-slate-200"]),
+:global(.dark) .workbench :global([class~="border-slate-300"]),
+:global(.dark) .workbench :global([class~="border-blue-100"]) {
+  border-color: #334155;
+}
+
+:global(.dark) .workbench :global([class~="border-emerald-200"]) {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+:global(.dark) .workbench :global([class~="border-amber-200"]) {
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+:global(.dark) .workbench :global([class~="border-red-200"]) {
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+:global(.dark) .workbench input,
+:global(.dark) .workbench textarea,
+:global(.dark) .workbench select {
+  background-color: #0b1220;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+:global(.dark) .workbench input::placeholder,
+:global(.dark) .workbench textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+:global(.dark) .workbench select option {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+:global(.dark) .workbench :global([class~="focus:ring-blue-100"]):focus,
+:global(.dark) .workbench input:focus,
+:global(.dark) .workbench textarea:focus,
+:global(.dark) .workbench select:focus,
+:global(.dark) .workbench button:focus-visible,
+:global(.dark) .workbench a:focus-visible {
+  --tw-ring-color: rgba(96, 165, 250, 0.55);
+  outline-color: #60a5fa;
+}
+
+:global(.dark) .workbench :global([class~="hover:bg-slate-50"]):hover {
+  background-color: #1e293b;
+}
+
+:global(.dark) .workbench :global([class~="hover:bg-blue-50"]):hover {
+  background-color: rgba(37, 99, 235, 0.3);
+}
+
+:global(.dark) .workbench button:disabled,
+:global(.dark) .workbench select:disabled {
+  opacity: 0.7;
+  color: #94a3b8;
+  border-color: #334155;
+  background-color: #1e293b;
+}
+
+/* The comparison matrix stays scrollable and preserves clear alternating rows. */
+:global(.dark) .workbench table tbody tr:nth-child(odd) {
+  background-color: #0f172a;
+}
+
+:global(.dark) .workbench table tbody tr:nth-child(even) {
+  background-color: #111c2f;
+}
+
+:global(.dark) .workbench table thead,
+:global(.dark) .workbench table thead th,
+:global(.dark) .workbench table tbody th {
+  background-color: #172033;
+}
+
+:global(.dark) .workbench table td {
+  border-color: #334155;
+}
