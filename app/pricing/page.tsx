@@ -18,11 +18,12 @@ function getPlans(): Plan[] {
       name: "Free",
       price: "TSh 0",
       description:
-        "Useful everyday tools supported by ads. No unnecessary paywall for simple jobs.",
+        "The AHP Criteria Weighting Calculator and useful everyday tools stay accessible without a paywall.",
       features: [
         "Single coordinate conversions",
         "Distance and area tools",
         "PDF split and merge",
+        "AHP Criteria Weighting Calculator with CSV, Excel and Print / PDF exports (free)",
         "Other basic tools with ads",
         "2 free bulk coordinate conversions per 24 hours",
       ],
