@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run test:hydrology && npm run test:gis && npx eslint features/hydrology/domain/dry-period.ts app/api/climate/rainfall/route.ts app/tools/gis/water-storage-calculator/page.tsx tests/hydrology/dry-period.test.ts tests/hydrology/rainfall-route.test.ts tests/hydrology/domain.test.ts lib/gis/ahp.ts components/gis/AHPWorkbench.tsx tests/gis/ahp.test.ts app/tools/gis/ahp-calculator/page.tsx app/tools/gis/page.tsx && next build",
+    "build": "npm run test:hydrology && npm run test:gis && npm run test:security && npx eslint features/hydrology/domain/dry-period.ts app/api/climate/rainfall/route.ts app/tools/gis/water-storage-calculator/page.tsx tests/hydrology/dry-period.test.ts tests/hydrology/rainfall-route.test.ts tests/hydrology/domain.test.ts lib/gis/ahp.ts components/gis/AHPWorkbench.tsx tests/gis/ahp.test.ts app/tools/gis/ahp-calculator/page.tsx app/tools/gis/page.tsx && next build",
     "start": "next start",
     "lint": "eslint",
     "test:hydrology": "tsx --test tests/hydrology/*.test.ts",
-    "test:gis": "tsx --test tests/gis/*.test.ts"
+    "test:gis": "tsx --test tests/gis/*.test.ts",
+    "test:security": "tsx --test tests/security/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
