@@ -1,7 +1,7 @@
 // Keep these counts aligned with tools that are currently active and usable.
 // Coming Soon tools must not be included.
 export const TOOL_COUNTS = {
-  field: 4,
+  field: 5,
   documents: 8,
   images: 1,
 } as const;
