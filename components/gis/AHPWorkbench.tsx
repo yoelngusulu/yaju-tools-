@@ -188,13 +188,13 @@ export default function AHPWorkbench() {
               <h3 className="font-bold text-slate-900">AHP priorities</h3>
               <p className="mt-1 text-xs text-slate-500">Ranked normalized criterion weights. The total is 100%.</p>
               {result ? <div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm">
-                <thead><tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500"><th className="py-2 pr-3">Rank</th><th className="py-2 pr-3">Criterion</th><th className="min-w-32 py-2 pl-3 text-right">Priority</th></tr></thead>
+                <thead><tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500"><th className="py-2 pr-1 sm:pr-3">Rank</th><th className="py-2 pr-1 sm:pr-3">Criterion</th><th className="min-w-24 sm:min-w-32 py-2 px-1 sm:px-3 text-right">Priority</th></tr></thead>
                 <tbody>{ranked.map((item, index) => <tr key={item.index} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2.5 pr-3 text-slate-500">{index + 1}</td>
-                  <td className="py-2.5 pr-3 font-medium text-slate-800">{item.name}</td>
-                  <td className="py-2.5 pl-3"><div className="flex items-baseline justify-between gap-2"><span className="font-bold tabular-nums text-slate-900">{percentage(item.weight)}</span><span className="text-xs tabular-nums text-slate-500">{numberText(item.weight, 6)}</span></div><div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600" style={{ width: String(item.weight * 100) + "%" }} /></div></td>
+                  <td className="py-2.5 pr-1 sm:pr-3 text-slate-500">{index + 1}</td>
+                  <td className="py-2.5 pr-1 sm:pr-3 font-medium text-slate-800">{item.name}</td>
+                  <td className="py-2.5 px-1 sm:px-3"><div className="flex items-baseline justify-between gap-2"><span className="font-bold tabular-nums text-slate-900">{percentage(item.weight)}</span><span className="hidden text-xs tabular-nums text-slate-500 sm:inline">{numberText(item.weight, 6)}</span></div><div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-600" style={{ width: String(item.weight * 100) + "%" }} /></div></td>
                 </tr>)}</tbody>
-                <tfoot><tr className="border-t border-slate-200"><td colSpan={2} className="py-2.5 pr-3 font-semibold text-slate-700">Total</td><td className="py-2.5 pl-3 text-right font-bold tabular-nums text-slate-900">{percentage(result.weights.reduce((sum, weight) => sum + weight, 0))}</td></tr></tfoot>
+                <tfoot><tr className="border-t border-slate-200"><td colSpan={2} className="py-2.5 pr-1 sm:pr-3 font-semibold text-slate-700">Total</td><td className="py-2.5 px-1 sm:px-3 text-right font-bold tabular-nums text-slate-900">{percentage(result.weights.reduce((sum, weight) => sum + weight, 0))}</td></tr></tfoot>
               </table></div> : <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">Priorities appear when all pairwise comparisons are complete and the criterion names are valid.</p>}
             </div>
             <div className="min-w-0 rounded-xl border border-slate-200 p-4 sm:p-5">
