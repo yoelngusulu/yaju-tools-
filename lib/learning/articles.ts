@@ -279,4 +279,61 @@ export const learningArticles: LearningArticle[] = [
       ]}
     ]
   }
+  ,{
+    slug: "ahp-in-gis-pairwise-comparisons-and-priority-weights",
+    title: "AHP in GIS: Pairwise Comparisons, Priority Weights and Consistency",
+    category: "GIS & Mapping",
+    summary: "Learn how the Analytic Hierarchy Process turns documented pairwise judgments into normalized GIS criterion weights, and how to review consistency before a weighted overlay.",
+    readTime: "7 min read",
+    toolHref: "/tools/gis/ahp-calculator",
+    toolLabel: "Open the free AHP Calculator",
+    sections: [
+      {
+        heading: "What AHP contributes to a GIS analysis",
+        paragraphs: [
+          "The Analytic Hierarchy Process (AHP) is a structured way to express the relative importance of decision criteria. In a GIS suitability study, criteria might include slope, distance to roads, land cover or access to water. AHP helps derive a weight for each criterion from pairwise judgments; it does not choose appropriate criteria or validate the underlying spatial data.",
+          "Define the decision objective, each criterion and its measurement direction before comparing them. For example, decide whether higher or lower values represent greater suitability, and document why each criterion belongs in the analysis."
+        ]
+      },
+      {
+        heading: "Make pairwise comparisons with the Saaty scale",
+        paragraphs: [
+          "Compare each unique pair of criteria and state which one matters more with respect to the decision objective. The classic Saaty scale uses 1 for equal importance, 3 for moderate, 5 for strong, 7 for very strong and 9 for extreme importance; 2, 4, 6 and 8 express intermediate judgments. A value in one direction implies its reciprocal in the opposite direction.",
+          "For n criteria, the number of unique comparisons is n × (n − 1) / 2. Make judgments using the same objective and scale throughout. Record the rationale and evidence behind important comparisons instead of treating the scale as a measurement of certainty."
+        ],
+        bullets: [
+          "Compare criteria two at a time, always relative to the same objective.",
+          "Use reciprocal values so that a judgment of 5 in one direction becomes 1/5 in the reverse direction.",
+          "Avoid assigning importance from inconsistent definitions or different study objectives."
+        ]
+      },
+      {
+        heading: "Understand the priority vector and consistency ratio",
+        paragraphs: [
+          "The pairwise judgments form a reciprocal comparison matrix. A principal-eigenvector method estimates a priority for each criterion, and the priorities are normalized so that they sum to 1, or 100 percent. These weights describe relative importance within the specified set of criteria.",
+          "A consistency ratio (CR) checks how coherent the comparisons are with one another. A CR at or below 0.10 is a commonly used guideline, not proof that the criteria, data or judgments are scientifically appropriate. If the ratio is higher, review the comparisons that may conflict and document any revisions."
+        ]
+      },
+      {
+        heading: "Apply weights to standardized GIS layers",
+        paragraphs: [
+          "Before combining raster criteria, convert them to comparable suitability scales with consistent direction. Then a weighted linear combination can be written as Suitability Index = Σ(weight × standardized criterion value). Confirm that each raster uses the intended extent, resolution, alignment, NoData treatment and reclassification scheme.",
+          "The AHP weights alone do not reclassify rasters or produce a suitability map. Test how the output changes under plausible alternative judgments, review the map against local knowledge and independent evidence, and explain assumptions in the study report."
+        ],
+        bullets: [
+          "Standardize all criterion layers before applying weights.",
+          "Check whether larger standardized values consistently mean more suitable.",
+          "Keep the comparison rationale, data sources and processing choices with the analysis.",
+          "Review sensitivity to changes in criteria and pairwise judgments."
+        ]
+      },
+      {
+        heading: "Use the calculator and keep the workflow transparent",
+        paragraphs: [
+          "The YAJU AHP Criteria Weighting Calculator supports 2 to 15 criteria, calculates reciprocal comparisons and principal-eigenvector priorities, and reports λ max, the consistency index and the consistency ratio. Results can be exported as CSV or Excel, or printed to PDF for review and documentation.",
+          "The calculator is free to use. It returns criterion weights only; the analyst remains responsible for selecting suitable data, checking assumptions and carrying out the GIS overlay in appropriate software. For consequential planning or engineering decisions, obtain relevant expert review."
+        ]
+      }
+    ]
+  }
 ];
