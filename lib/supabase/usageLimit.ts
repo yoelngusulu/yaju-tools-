@@ -43,6 +43,7 @@ type UsageLimitResult = {
   limit: number;
   identityType: UsageIdentityType;
   identityId: string;
+  status?: number;
 };
 
 type SupabaseUser = {
@@ -116,13 +117,14 @@ function allowWhenUsageCheckFails(
   limit: number
 ): UsageLimitResult {
   return {
-    allowed: true,
-    reason: null,
-    remaining: limit,
+    allowed: false,
+    reason: "Usage verification is temporarily unavailable. Please try again shortly.",
+    remaining: 0,
     used: 0,
     limit,
     identityType,
     identityId,
+    status: 503,
   };
 }
 
