@@ -4,6 +4,7 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 
 import os from "os";
 import path from "path";
@@ -39,6 +40,13 @@ function sanitizeFileName(
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed." },
+      { status: 403 }
+    );
+  }
+
   const usage =
     await checkUsageLimit();
 
@@ -51,7 +59,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
