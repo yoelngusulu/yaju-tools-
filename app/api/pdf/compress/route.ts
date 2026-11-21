@@ -4,6 +4,7 @@ import {
   NextResponse,
 } from "next/server";
 import { PDFDocument } from "pdf-lib";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
@@ -66,6 +67,13 @@ function compressedPdfName(fileName: string) {
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed." },
+      { status: 403 }
+    );
+  }
+
   const usage = await checkUsageLimit(
     "compress-pdf"
   );
@@ -78,7 +86,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
