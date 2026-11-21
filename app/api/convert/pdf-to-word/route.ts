@@ -14,6 +14,7 @@ import {
   runNativeExecutable,
 } from "@/lib/nativeExecutables";
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 export const runtime = "nodejs";
@@ -25,6 +26,9 @@ const CONVERSION_TIMEOUT_MS =
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
+  }
   // Check usage limit before starting conversion.
   const usage =
     await checkUsageLimit("pdf-to-word");
@@ -38,7 +42,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
@@ -82,6 +86,20 @@ export async function POST(
       );
     }
 
+    if (file.size > 100 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Maximum file size is 100 MB." },
+        { status: 413 }
+      );
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return NextResponse.json(
+        { error: "Only PDF files are allowed." },
+        { status: 400 }
+      );
+    }
+
     if (file.size === 0) {
       return NextResponse.json(
         {
@@ -98,6 +116,13 @@ export async function POST(
       Buffer.from(
         await file.arrayBuffer()
       );
+
+    if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      return NextResponse.json(
+        { error: "The uploaded file is not a valid PDF." },
+        { status: 400 }
+      );
+    }
 
     await fs.writeFile(
       inputPath,
