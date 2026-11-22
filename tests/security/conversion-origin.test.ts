@@ -65,6 +65,24 @@ describe("isAllowedConversionOrigin", () => {
     assert.equal(isAllowedConversionOrigin(request), true);
   });
 
+  it("rejects the retired static Vercel preview host", () => {
+    delete process.env.VERCEL_URL;
+    delete process.env.VERCEL_BRANCH_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
+    const request = new NextRequest(
+      "https://yaju-git-adsense-publish-2026-10-28-yoelngusulu.vercel.app/api/test",
+      {
+        method: "POST",
+        headers: {
+          origin: "https://yaju-git-adsense-publish-2026-10-28-yoelngusulu.vercel.app",
+        },
+      }
+    );
+
+    assert.equal(isAllowedConversionOrigin(request), false);
+  });
+
   it("rejects an unlisted request host even when the Origin is self-consistent", () => {
     const request = new NextRequest("https://untrusted.example/api/test", {
       method: "POST",
