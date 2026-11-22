@@ -348,10 +348,7 @@ export async function POST(
 
     return NextResponse.json(
       {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unable to compress PDF.",
+        message: "Unable to compress the uploaded file. Please check the file and try again.",
       },
       {
         status: 500,
