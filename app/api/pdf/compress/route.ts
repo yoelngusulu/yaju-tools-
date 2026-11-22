@@ -5,6 +5,7 @@ import {
 } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
@@ -15,6 +16,9 @@ export const maxDuration = 120;
 
 const MAX_PDF_FILE_SIZE = 100 * 1024 * 1024;
 const MAX_ZIP_FILE_SIZE = 200 * 1024 * 1024;
+const MAX_ZIP_ENTRIES = 500;
+const MAX_ZIP_PDF_FILES = 20;
+const MAX_ZIP_UNCOMPRESSED_BYTES = 250 * 1024 * 1024;
 
 function sanitizeFileName(fileName: string) {
   return fileName
@@ -36,6 +40,10 @@ function isZipFile(fileName: string) {
 async function compressPdfBytes(
   sourceBytes: Uint8Array
 ) {
+  if (!hasPdfSignature(sourceBytes)) {
+    throw new Error("The uploaded file does not have a valid PDF signature.");
+  }
+
   const pdfDocument = await PDFDocument.load(
     sourceBytes
   );
@@ -145,28 +153,76 @@ export async function POST(
           await uploadedFile.arrayBuffer()
         );
 
+      const entries = Object.values(sourceZip.files);
+
+      if (entries.length > MAX_ZIP_ENTRIES) {
+        return NextResponse.json(
+          { message: `ZIP archives may contain no more than ${MAX_ZIP_ENTRIES} entries.` },
+          { status: 413 }
+        );
+      }
+
+      const pdfEntries = entries.filter(
+        (entry) => !entry.dir && isPdfFile(entry.name)
+      );
+
+      if (pdfEntries.length > MAX_ZIP_PDF_FILES) {
+        return NextResponse.json(
+          { message: `ZIP archives may contain no more than ${MAX_ZIP_PDF_FILES} PDF files.` },
+          { status: 413 }
+        );
+      }
+
+      let declaredUncompressedBytes = 0;
+      for (const entry of pdfEntries) {
+        const metadata = entry as JSZip.JSZipObject & {
+          _data?: { uncompressedSize?: number };
+        };
+        const declaredSize = metadata._data?.uncompressedSize;
+
+        if (
+          !Number.isSafeInteger(declaredSize) ||
+          declaredSize === undefined ||
+          declaredSize <= 0
+        ) {
+          return NextResponse.json(
+            { message: `The ZIP entry "${sanitizeFileName(entry.name)}" has invalid size metadata.` },
+            { status: 400 }
+          );
+        }
+
+        if (declaredSize > MAX_PDF_FILE_SIZE) {
+          return NextResponse.json(
+            { message: `Each PDF inside a ZIP must be 100 MB or smaller.` },
+            { status: 413 }
+          );
+        }
+
+        declaredUncompressedBytes += declaredSize;
+        if (declaredUncompressedBytes > MAX_ZIP_UNCOMPRESSED_BYTES) {
+          return NextResponse.json(
+            { message: "The total uncompressed PDF data in a ZIP cannot exceed 250 MB." },
+            { status: 413 }
+          );
+        }
+      }
+
       const outputZip = new JSZip();
       let compressedCount = 0;
 
-      for (const entry of Object.values(
-        sourceZip.files
-      )) {
-        if (
-          entry.dir ||
-          !isPdfFile(entry.name)
-        ) {
-          continue;
-        }
-
+      for (const entry of pdfEntries) {
         const pdfBytes =
           await entry.async("uint8array");
 
         if (
           pdfBytes.byteLength === 0 ||
-          pdfBytes.byteLength >
-            MAX_PDF_FILE_SIZE
+          pdfBytes.byteLength > MAX_PDF_FILE_SIZE ||
+          !hasPdfSignature(pdfBytes)
         ) {
-          continue;
+          return NextResponse.json(
+            { message: `The ZIP entry "${sanitizeFileName(entry.name)}" is not a valid PDF file.` },
+            { status: 400 }
+          );
         }
 
         const compressedBytes =
@@ -255,6 +311,13 @@ export async function POST(
       new Uint8Array(
         await uploadedFile.arrayBuffer()
       );
+
+    if (!hasPdfSignature(sourceBytes)) {
+      return NextResponse.json(
+        { message: "The uploaded file is not a valid PDF." },
+        { status: 400 }
+      );
+    }
 
     const compressedBytes =
       await compressPdfBytes(sourceBytes);

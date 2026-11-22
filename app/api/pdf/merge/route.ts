@@ -4,6 +4,7 @@ import {
 } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
@@ -210,6 +211,17 @@ export async function POST(
 
     for (const [index, file] of uploadedFiles.entries()) {
       const bytes = await file.arrayBuffer();
+
+      if (!hasPdfSignature(bytes)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `${file.name} does not contain a valid PDF signature.`,
+          },
+          { status: 400 }
+        );
+      }
+
       let pdf: PDFDocument;
 
       try {

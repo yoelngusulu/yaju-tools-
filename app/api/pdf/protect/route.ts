@@ -12,6 +12,7 @@ import path from "path";
 import os from "os";
 import crypto from "crypto";
 import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import {
   NATIVE_CONVERSION_UNAVAILABLE_MESSAGE,
@@ -164,6 +165,13 @@ export async function POST(
       Buffer.from(
         await uploadedFile.arrayBuffer()
       );
+
+    if (!hasPdfSignature(inputBytes)) {
+      return NextResponse.json(
+        { message: "The uploaded file is not a valid PDF." },
+        { status: 400 }
+      );
+    }
 
     await writeFile(
       inputPath,

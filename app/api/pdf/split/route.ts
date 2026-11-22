@@ -5,6 +5,7 @@ import {
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
@@ -414,6 +415,16 @@ export async function POST(
 
     const uploadedBytes = await uploadedFile.arrayBuffer();
     const sourceBytes = new Uint8Array(uploadedBytes);
+
+    if (!hasPdfSignature(sourceBytes)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The uploaded file is not a valid PDF.",
+        },
+        { status: 400 }
+      );
+    }
 
     let sourcePdf: PDFDocument;
 

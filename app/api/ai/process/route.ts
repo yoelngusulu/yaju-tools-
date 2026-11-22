@@ -399,7 +399,9 @@ const status = message.includes("OPENAI_API_KEY")
 
 const clientMessage = isQuotaError
   ? "AI features are temporarily unavailable because API credits are not active. You can continue using PDF and document tools."
-  : message;
+  : status === 503
+    ? "AI processing is temporarily unavailable. Please try again later."
+    : "Unable to process the file with AI. Please try again.";
 
     return NextResponse.json(
       {
