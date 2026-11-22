@@ -13,7 +13,7 @@ describe("hasPdfSignature", () => {
 
   it("rejects a non-PDF header", () => {
     assert.equal(
-      hasPdfSignature(new TextEncoder().encode("PK\\u0003\\u0004")),
+      hasPdfSignature(new Uint8Array([0x50, 0x4b, 0x03, 0x04])),
       false
     );
   });
