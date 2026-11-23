@@ -14,13 +14,36 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   const [yearColumn, setYearColumn] = useState("0");
   const [monthColumn, setMonthColumn] = useState("1");
   const [dayColumn, setDayColumn] = useState("2");
-  const [rainfallColumn, setRainfallColumn] = useState("3");
+  const [rainfallColumn, setRainfallColumn] = useState("");
+  const [chartPeriod, setChartPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [selectedYear, setSelectedYear] = useState("");
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<{ records: ReturnType<typeof parseRainfallRows>["records"]; errors: string[] } | null>(null);
   const [analysis, setAnalysis] = useState<UploadedRainfallAnalysis | null>(null);
 
   const maxMonthly = useMemo(() => Math.max(1, ...(analysis?.monthlyRainfall.map((item) => item.rainfallMm ?? 0) ?? [])), [analysis]);
+  const annualChartData = useMemo(() => {
+    if (!analysis) return [];
+    const totals = new Map<number, number>();
+    for (const record of analysis.records) {
+      const year = Number(record.date.slice(0, 4));
+      totals.set(year, (totals.get(year) ?? 0) + record.rainfallMm);
+    }
+    return [...totals.entries()].sort((a, b) => a[0] - b[0]).map(([year, rainfallMm]) => ({ label: String(year), rainfallMm }));
+  }, [analysis]);
+  const monthlyChartData = useMemo(() => {
+    if (!analysis) return [];
+    const year = Number(selectedYear || analysis.endYear);
+    const totals = Array.from({ length: 12 }, (_, index) => ({ label: new Date(Date.UTC(2000, index, 1)).toLocaleString("en", { month: "short", timeZone: "UTC" }), rainfallMm: 0 }));
+    for (const record of analysis.records) {
+      const y = Number(record.date.slice(0, 4)), month = Number(record.date.slice(5, 7)) - 1;
+      if (y === year && month >= 0 && month < 12) totals[month].rainfallMm += record.rainfallMm;
+    }
+    return totals;
+  }, [analysis, selectedYear]);
+  const activeChartData = chartPeriod === "yearly" ? annualChartData : monthlyChartData;
+  const chartMax = Math.max(1, ...activeChartData.map((item) => item.rainfallMm));
   const dailyChart = useMemo(() => {
     if (!analysis) return { path: "", max: 1, thresholdY: 190 };
     const max = Math.max(1, ...analysis.records.map((item) => item.rainfallMm));
@@ -57,7 +80,9 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       setMonthColumn(String(monthGuess >= 0 ? monthGuess : 1));
       setDayColumn(String(dayGuess >= 0 ? dayGuess : 2));
       setDateColumn(String(dateGuess >= 0 ? dateGuess : 0));
-      setRainfallColumn(String(rainGuess >= 0 ? rainGuess : (hasDateParts && names.length > 3 ? 3 : (names.length > 1 ? 1 : 0))));
+      const fallbackRain = names.findIndex((_, index) => ![yearGuess, monthGuess, dayGuess, dateGuess].includes(index));
+      setRainfallColumn(String(rainGuess >= 0 ? rainGuess : fallbackRain >= 0 ? fallbackRain : ""));
+      setSelectedYear(""); setChartPeriod("monthly");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not read this rainfall file.");
     }
@@ -68,6 +93,9 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       const dateColumns = dateMode === "components"
         ? { yearColumn: Number(yearColumn), monthColumn: Number(monthColumn), dayColumn: Number(dayColumn) }
         : Number(dateColumn);
+      if (rainfallColumn === "" || !Number.isInteger(Number(rainfallColumn)) || Number(rainfallColumn) < 0) {
+        throw new Error("No rainfall station column was detected. Upload the complete TMA file containing daily rainfall values (mm/day), or select the station rainfall column.");
+      }
       const parsed = parseRainfallRows(rows, dateColumns, Number(rainfallColumn));
       setPreview({ records: parsed.records, errors: parsed.errors });
       if (parsed.errors.length) {
@@ -75,7 +103,7 @@ export default function RainfallUploadPanel({ onApply }: Props) {
         setAnalysis(null); return;
       }
       const result = analyseUploadedRainfall(parsed.records);
-      setAnalysis(result); setError("");
+      setAnalysis(result); setSelectedYear(String(result.endYear)); setError("");
       onApply(result, fileName);
     } catch (cause) {
       setAnalysis(null);
@@ -145,9 +173,20 @@ export default function RainfallUploadPanel({ onApply }: Props) {
             <div className="rounded-lg bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Design dry period</p><strong className="text-sm">{analysis.dryPeriod.valueDays === null ? "Unavailable" : `${analysis.dryPeriod.valueDays} days`}</strong></div>
           </div>
           <div>
-            <p className="mb-2 text-xs font-bold text-slate-800">Mean monthly rainfall (mm)</p>
-            <div className="grid grid-cols-6 items-end gap-2 sm:grid-cols-12">
-              {analysis.monthlyRainfall.map((item) => <div key={item.monthNumber} className="min-w-0 text-center"><div className="flex h-24 items-end justify-center rounded bg-slate-50"><div title={item.rainfallMm === null ? "Insufficient coverage" : `${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{ height: item.rainfallMm === null ? "0%" : `${Math.max(3, item.rainfallMm / maxMonthly * 100)}%` }} /></div><span className="mt-1 block text-[10px] text-slate-500">{item.month}</span></div>)}
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold text-slate-800">Rainfall aggregation and graph</p>
+              <div className="flex items-center gap-2">
+                <select aria-label="Rainfall graph period" value={chartPeriod} onChange={(event) => setChartPeriod(event.target.value as "monthly" | "yearly")} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700">
+                  <option value="monthly">Monthly</option><option value="yearly">Yearly</option>
+                </select>
+                {chartPeriod === "monthly" && <select aria-label="Select year for monthly rainfall graph" value={selectedYear || String(analysis.endYear)} onChange={(event) => setSelectedYear(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">{Array.from({length: analysis.endYear - analysis.startYear + 1}, (_, i) => analysis.startYear + i).map((year) => <option key={year} value={year}>{year}</option>)}</select>}
+              </div>
+            </div>
+            <p className="mb-2 text-[10px] text-slate-500">{chartPeriod === "monthly" ? `Monthly rainfall totals for ${selectedYear || analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</p>
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div className={`grid items-end gap-1 ${chartPeriod === "yearly" ? "grid-flow-col auto-cols-[minmax(24px,1fr)]" : "grid-cols-6 sm:grid-cols-12"}`}>
+                {activeChartData.map((item) => <div key={item.label} className="min-w-0 text-center"><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{height: `${Math.max(2, item.rainfallMm / chartMax * 100)}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
+              </div>
             </div>
           </div>
           <div>
