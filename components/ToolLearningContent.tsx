@@ -51,20 +51,26 @@ const content: Record<Variant, {
   },
   water: {
     eyebrow: "Water storage planning guide",
-    title: "Size water storage using realistic site inputs",
-    intro: "Preliminary storage sizing combines demand, source reliability, rainfall, catchment area and operating assumptions. Annual rainfall alone does not show whether enough water will be available during a long dry period.",
+    title: "Plan storage with rainfall records and transparent design assumptions",
+    intro: "The Water Storage Calculator now combines site-based NASA POWER rainfall estimates with uploaded daily rainfall analysis. Use the rainfall record to review annual totals, long-term monthly climatology and dry-period evidence before applying demand, catchment and storage assumptions. Results remain preliminary planning estimates.",
     guide: "/learn/water-storage-sizing-rainwater-and-borehole",
     guideLabel: "Read the water storage sizing guide",
     faqs: [
-      { question: "Is annual rainfall enough to size a storage tank?", answer: "Not by itself. Seasonal distribution, daily demand, dry-period duration, catchment losses and storage behaviour also matter." },
-      { question: "Does a pump rating prove borehole sustainable yield?", answer: "No. Sustainable yield should be assessed using suitable pumping-test evidence and aquifer response, not pump rating alone." },
-      { question: "Are automatic rainfall values local gauge measurements?", answer: "Not necessarily. Gridded rainfall products are estimates for grid cells and can differ from observations at a local rain gauge." }
+      { question: "Which rainfall files can I upload?", answer: "Upload an Excel (.xlsx or .xls) or CSV file with daily rainfall in mm/day. The file can contain one Date/Datetime/Timestamp column, or separate TMA YEAR, MONTH and DAY columns. Select the station rainfall column containing daily values in mm/day." },
+      { question: "What rainfall summaries are available?", answer: "After validation, the calculator reports the record period, valid annual totals and mean annual rainfall, long-term mean monthly rainfall climatology, annual rainfall totals and a daily rainfall time series. Monthly climatology is calculated from valid monthly totals across years." },
+      { question: "Can I download the rainfall charts?", answer: "Yes. The uploaded-data analysis provides PNG downloads for the monthly climatology graph, annual rainfall totals graph and daily rainfall time-series graph." },
+      { question: "How is the design dry period estimated?", answer: "CDD analysis classifies daily rainfall below 1 mm/day as dry. A year needs at least 90% daily coverage, and at least 80% of years in the uploaded period must be valid for the nearest-rank 90th-percentile estimate. Missing days are not treated as dry. If coverage is insufficient, enter a verified dry-period value manually; the calculator does not invent one." },
+      { question: "Does selecting a map point use a rain-gauge observation?", answer: "No. NASA POWER provides gridded climate estimates for a grid cell, not a local rain-gauge measurement. The selected grid coordinates and record period are shown so you can assess spatial representativeness. You can also enter a verified annual rainfall value manually." },
+      { question: "What are the upload and usage limits?", answer: "A rainfall file can be up to 10 MB and contain up to 50,000 daily records. Free users have two successful bulk CSV/Excel analyses per rolling 24 hours. Active Premium users have unlimited bulk analyses. A complete uploaded dataset counts as one analysis, regardless of its number of rows. Single-point NASA POWER retrievals and manual single-point rainfall inputs are not charged against the bulk-file quota." },
+      { question: "Does the calculator run a complete rainfall-runoff simulation?", answer: "No. Rainwater sizing uses annual rainfall and dry-period demand; it is not a daily storage-routing, rainfall-runoff or catchment-discharge model. Use a suitable hydrological model and site-specific design data for detailed watershed or engineering design." }
     ],
     sections: [
-      { title: "Rainwater harvesting", body: "A simplified yield estimate uses rainfall depth, catchment area, runoff coefficient and collection efficiency. Keep units consistent: rainfall in metres multiplied by area in square metres gives cubic metres; multiply by 1,000 for litres. Select coefficients that reflect the actual roof or catchment surface and losses." },
-      { title: "Dry-period storage and demand", body: "Consider daily demand and the timing of rainfall, not only the annual total. A monthly or daily water-balance assessment is more informative than annual yield alone when storage reliability matters. Test alternative demand and dry-period assumptions." },
-      { title: "Borehole and tank dimensions", body: "Distinguish tested borehole yield from pump-rated and actual discharge. Pumping hours and recovery affect supply. For tanks, distinguish geometric capacity from usable storage after freeboard, dead storage and operating reserve." },
-      { title: "Treat results as preliminary", body: "Automatically retrieved gridded rainfall may differ from a local gauge. Check the selected site, grid location, units, record period and source. Final design also requires water-quality, source sustainability, structural and engineering checks." }
+      { title: "Prepare TMA daily rainfall data", body: "Use the first worksheet of an Excel workbook or a CSV file. Include a header row and daily rainfall values in mm/day. The date can be stored in one Date column or in three separate columns named YEAR, MONTH and DAY. Choose the correct rainfall station column (for example, a station series such as Nduta_1 or Nduta_2), inspect the preview, and validate the records before applying the dataset.", bullets: ["Accepted formats: .xlsx, .xls and .csv.", "Maximum file size: 10 MB; maximum: 50,000 daily records.", "Check date completeness, duplicate dates, non-negative rainfall values and the selected station column."] },
+      { title: "Interpret rainfall summaries and charts", body: "The analysis presents the record period, number of valid annual totals and mean annual rainfall. Monthly climatology is the mean of valid monthly rainfall totals for each calendar month across the available years. The yearly view shows annual rainfall totals, while the daily time series retains the sequence of daily observations. Use the PNG export controls to save the monthly, yearly and daily graphs for reporting.", bullets: ["Monthly graph: mean monthly rainfall in mm/month.", "Yearly graph: annual rainfall totals in mm/year.", "Daily graph: rainfall time series in mm/day, with the 1 mm/day dry threshold."] },
+      { title: "Apply the CDD design dry-period result carefully", body: "The current method treats daily rainfall below 1 mm/day as dry. Annual maximum consecutive dry days are assessed only where annual daily coverage is at least 90%; at least 80% of years must be valid to calculate the nearest-rank 90th percentile. Missing observations are not classified as dry. Spells crossing calendar-year boundaries follow the implemented convention, while boundary- or gap-censored spells are excluded from valid annual maxima. If the dataset does not meet the coverage criteria, provide a verified dry-period value from an appropriate source or study.", bullets: ["The 90th percentile is the calculator's selected design statistic, not an ETCCDI requirement.", "Do not interpret an unavailable estimate as zero days.", "Review the record period and data gaps before accepting the result."] },
+      { title: "Use NASA POWER point rainfall with awareness of scale", body: "Selecting a site requests daily precipitation from NASA POWER for the selected location and reports the corresponding grid point and record period. Gridded precipitation is a climate estimate and can differ from a local rain gauge, especially where terrain or rainfall varies over short distances. For design, compare it with TMA station records and other suitable local observations where available. If needed, enter a verified annual rainfall value manually." },
+      { title: "Understand quota and analysis limits", body: "Bulk Excel/CSV rainfall analysis is subject to a dedicated usage quota: Free accounts can complete two successful analyses in each rolling 24-hour period, while active Premium accounts have unlimited bulk analyses. One uploaded dataset is one analysis, regardless of row count. Single-point NASA POWER requests and manual single-point rainfall inputs do not consume this bulk-file quota. Invalid files are rejected before an analysis is reserved; the upload size and daily-record limits still apply." },
+      { title: "Keep the storage calculation in context", body: "The rainwater storage estimate uses annual rainfall, catchment area, runoff coefficient, collection efficiency, daily demand, design dry period and safety allowance. It does not route the uploaded daily series through a time-step storage model. Borehole, irrigation and tank-dimension modes retain their own input assumptions; ETo and effective rainfall for irrigation remain manual inputs. Confirm source sustainability, demand, water quality, structural requirements and applicable engineering standards before final design." }
     ]
   }
 };
@@ -96,6 +102,28 @@ export default function ToolLearningContent({ variant }: { variant: Variant }) {
               <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">{faq.answer}</p>
             </details>
           ))}
+        </div>
+      </section>
+      <section className="mt-8">
+        <h3 className="text-xl font-bold text-slate-950">Resources &amp; supporting documents</h3>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">Use the original data-provider and technical references below when preparing rainfall inputs or reviewing design assumptions. These links are external references; they are not generated reports or a substitute for project-specific engineering documentation.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <a href="https://www.meteo.go.tz/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+            <strong className="block text-sm text-slate-900">Tanzania Meteorological Authority (TMA)</strong>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">National meteorological information and rainfall observation context. Use station records with their metadata and quality-control information.</span>
+          </a>
+          <a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+            <strong className="block text-sm text-slate-900">NASA POWER Data Access</strong>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">Gridded meteorological and solar data. Review spatial resolution, temporal coverage, parameter definitions and data limitations.</span>
+          </a>
+          <a href="https://power.larc.nasa.gov/docs/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+            <strong className="block text-sm text-slate-900">NASA POWER Documentation</strong>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">API, parameter and methodology documentation for understanding the gridded climate data.</span>
+          </a>
+          <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+            <strong className="block text-sm text-slate-900">FAO Irrigation and Drainage Paper 56</strong>
+            <span className="mt-1 block text-xs leading-5 text-slate-600">Reference for crop evapotranspiration and irrigation water-requirement concepts. Irrigation climate inputs in this calculator remain manual.</span>
+          </a>
         </div>
       </section>
       <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
