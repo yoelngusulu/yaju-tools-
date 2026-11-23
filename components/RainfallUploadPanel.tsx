@@ -6,6 +6,39 @@ import { analyseUploadedRainfall, parseRainfallRows, type UploadedRainfallAnalys
 
 type Props = { onApply: (analysis: UploadedRainfallAnalysis, fileName: string) => void };
 
+function downloadChartPng(fileName: string, svgMarkup: string, width: number, height: number) {
+  const svgBlob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+  const objectUrl = URL.createObjectURL(svgBlob);
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      URL.revokeObjectURL(objectUrl);
+      return;
+    }
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    URL.revokeObjectURL(objectUrl);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const pngUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = pngUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(pngUrl);
+    }, "image/png");
+  };
+  image.onerror = () => URL.revokeObjectURL(objectUrl);
+  image.src = objectUrl;
+}
+
 export default function RainfallUploadPanel({ onApply }: Props) {
   const [rows, setRows] = useState<unknown[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -22,7 +55,6 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   const [preview, setPreview] = useState<{ records: ReturnType<typeof parseRainfallRows>["records"]; errors: string[] } | null>(null);
   const [analysis, setAnalysis] = useState<UploadedRainfallAnalysis | null>(null);
 
-  const maxMonthly = useMemo(() => Math.max(1, ...(analysis?.monthlyRainfall.map((item) => item.rainfallMm ?? 0) ?? [])), [analysis]);
   const annualChartData = useMemo(() => {
     if (!analysis) return [];
     const totals = new Map<number, number>();
@@ -184,8 +216,8 @@ export default function RainfallUploadPanel({ onApply }: Props) {
             </div>
             <p className="mb-2 text-[10px] text-slate-500">{chartPeriod === "monthly" ? `Monthly rainfall totals for ${selectedYear || analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</p>
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div className={`grid items-end gap-1 ${chartPeriod === "yearly" ? "grid-flow-col auto-cols-[minmax(24px,1fr)]" : "grid-cols-6 sm:grid-cols-12"}`}>
-                {activeChartData.map((item) => <div key={item.label} className="min-w-0 text-center"><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{height: `${Math.max(2, item.rainfallMm / chartMax * 100)}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
+              <div className={chartPeriod === "yearly" ? "flex min-w-max items-end gap-1" : "grid grid-cols-6 items-end gap-1 sm:grid-cols-12"}>
+                {activeChartData.map((item) => <div key={item.label} className={chartPeriod === "yearly" ? "w-8 shrink-0 text-center" : "min-w-0 text-center"}><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{height: `${Math.max(2, item.rainfallMm / chartMax * 100)}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
               </div>
             </div>
             <button type="button" onClick={() => {
