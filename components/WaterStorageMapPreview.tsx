@@ -210,7 +210,11 @@ export default function WaterStorageMapPreview({
       <div className="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-3">
         <button
           type="button"
-          onClick={() => setMode(interactionMode === "site" ? null : "site")}
+          onClick={() => {
+            setDraftPoints([]);
+            setMapError(null);
+            setMode(interactionMode === "site" ? null : "site");
+          }}
           aria-pressed={interactionMode === "site"}
           className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${interactionMode === "site" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"}`}
         >
