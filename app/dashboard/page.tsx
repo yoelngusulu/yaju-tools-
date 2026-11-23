@@ -16,6 +16,12 @@ type Conversion = {
   created_at: string;
 };
 
+type UsageEvent = { id: number; tool: string; created_at: string };
+type DashboardActivity = {
+  id: string; label: string; detail: string; created_at: string;
+  category: "File conversion" | "Tool analysis";
+};
+
 const toolLabels: Record<string, string> = {
   "coordinates-bulk": "Coordinates Bulk",
   "compress-pdf": "Compress PDF",
@@ -34,18 +40,27 @@ const toolLabels: Record<string, string> = {
   "png-to-jpg": "PNG to JPG",
   "webp-to-jpg": "WEBP to JPG",
   "webp-to-png": "WEBP to PNG",
+  "water-storage-csv": "Water Storage – Rainfall Analysis",
 };
 
 function getToolLabel(tool: string) {
   return toolLabels[tool] ?? tool;
 }
 
-function formatDate(value: string | null) {
-  if (!value) {
-    return "Not set";
-  }
+const DASHBOARD_TIME_ZONE = "Africa/Dar_es_Salaam";
 
-  return new Date(value).toLocaleString();
+function formatDate(value: string | null) {
+  if (!value) return "Not set";
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium", timeStyle: "short", timeZone: DASHBOARD_TIME_ZONE,
+  }).format(new Date(value));
+}
+
+function getLocalDateKey(value: string | Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: DASHBOARD_TIME_ZONE,
+  }).format(new Date(value));
 }
 
 function formatStatus(status: string | null | undefined) {
@@ -84,42 +99,47 @@ export default async function DashboardPage() {
     premiumPlan.checkoutConfigured &&
     billingSummary.plan !== "PREMIUM";
 
-  const {
-    data: conversions,
-    error: conversionsError,
-  } = await supabase
-    .from("conversion_history")
-    .select(
-      "id, tool, original_file_name, output_file_name, created_at"
-    )
-    .eq("user_id", user.id)
-    .order("created_at", {
-      ascending: false,
-    });
+  const [
+    { data: conversions, error: conversionsError },
+    { data: usageEvents, error: usageEventsError },
+  ] = await Promise.all([
+    supabase.from("conversion_history")
+      .select("id, tool, original_file_name, output_file_name, created_at")
+      .eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("conversion_usage")
+      .select("id, tool, created_at")
+      .eq("user_id", user.id).eq("tool", "water-storage-csv")
+      .order("created_at", { ascending: false }),
+  ]);
 
-  if (conversionsError) {
-    console.error(
-      "Unable to load conversion history:",
-      conversionsError
-    );
-  }
+  if (conversionsError) console.error("Unable to load conversion history:", conversionsError);
+  if (usageEventsError) console.error("Unable to load tool activity:", usageEventsError);
 
   const history = (conversions as Conversion[] | null) ?? [];
-  const totalConversions = history.length;
+  const rainfallUsage = (usageEvents as UsageEvent[] | null) ?? [];
+  const activities: DashboardActivity[] = [
+    ...history.map((item) => ({
+      id: `conversion-${item.id}`,
+      label: getToolLabel(item.tool),
+      detail: `${item.original_file_name} → ${item.output_file_name}`,
+      created_at: item.created_at,
+      category: "File conversion" as const,
+    })),
+    ...rainfallUsage.map((item) => ({
+      id: `usage-${item.id}`,
+      label: getToolLabel(item.tool),
+      detail: "Uploaded daily rainfall dataset analysed",
+      created_at: item.created_at,
+      category: "Tool analysis" as const,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  const todayConversions = history.filter(
-    (conversion) =>
-      new Date(conversion.created_at) >= startOfToday
+  const totalActivities = activities.length;
+  const todayKey = getLocalDateKey(new Date());
+  const todayActivities = activities.filter(
+    (activity) => getLocalDateKey(activity.created_at) === todayKey
   ).length;
-
-  const recentConversions = history.slice(0, 10);
+  const recentActivities = activities.slice(0, 10);
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-12">
@@ -141,19 +161,19 @@ export default async function DashboardPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-gray-500">
-              Today&apos;s Conversions
+              Today&apos;s Activity
             </p>
             <p className="mt-2 text-3xl font-bold text-gray-900">
-              {todayConversions}
+              {todayActivities}
             </p>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-gray-500">
-              Total Conversions
+              Total Activity
             </p>
             <p className="mt-2 text-3xl font-bold text-gray-900">
-              {totalConversions}
+              {totalActivities}
             </p>
           </div>
 
@@ -338,11 +358,11 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Recent Conversions
+                Recent Activity
               </h2>
 
               <p className="mt-1 text-sm text-gray-500">
-                Your latest YAJU activity.
+                Your latest file conversions and tool analyses.
               </p>
             </div>
 
@@ -360,14 +380,14 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {recentConversions.length === 0 ? (
+          {recentActivities.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
               <p className="font-medium text-gray-700">
-                No conversions yet
+                No activity yet
               </p>
 
               <p className="mt-2 text-sm text-gray-500">
-                Your conversion history will appear here after you use a tool.
+                Your YAJU tool activity will appear here after you complete an analysis or conversion.
               </p>
             </div>
           ) : (
@@ -379,10 +399,10 @@ export default async function DashboardPage() {
                       Tool
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Original File
+                      Activity
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Output File
+                      Date
                     </th>
                     <th className="px-4 py-3 font-medium">
                       Date
@@ -391,27 +411,27 @@ export default async function DashboardPage() {
                 </thead>
 
                 <tbody>
-                  {recentConversions.map((conversion) => (
+                  {recentActivities.map((activity) => (
                     <tr
-                      key={conversion.id}
+                      key={activity.id}
                       className="border-b border-gray-100 text-sm"
                     >
                       <td className="px-4 py-4">
                         <span className="rounded-lg bg-blue-50 px-3 py-1.5 font-medium text-blue-700">
-                          {getToolLabel(conversion.tool)}
+                          {activity.label}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 text-gray-700">
-                        {conversion.original_file_name}
+                      <td className="px-4 py-4 text-gray-600">
+                        {activity.category}
                       </td>
 
                       <td className="px-4 py-4 text-gray-700">
-                        {conversion.output_file_name}
+                        {activity.detail}
                       </td>
 
-                      <td className="px-4 py-4 text-gray-500">
-                        {formatDate(conversion.created_at)}
+                      <td className="whitespace-nowrap px-4 py-4 text-gray-500">
+                        {formatDate(activity.created_at)}
                       </td>
                     </tr>
                   ))}
