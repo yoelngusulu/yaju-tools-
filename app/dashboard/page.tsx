@@ -399,10 +399,13 @@ export default async function DashboardPage() {
                       Tool
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Activity
+                      Activity Type
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Date
+                      Details
+                    </th>
+                    <th className="px-4 py-3 font-medium">
+                      Date (EAT)
                     </th>
                     <th className="px-4 py-3 font-medium">
                       Date
