@@ -104,28 +104,31 @@ export default function ToolLearningContent({ variant }: { variant: Variant }) {
           ))}
         </div>
       </section>
-      <section className="mt-8">
-        <h3 className="text-xl font-bold text-slate-950">Resources &amp; supporting documents</h3>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">Use the original data-provider and technical references below when preparing rainfall inputs or reviewing design assumptions. These links are external references; they are not generated reports or a substitute for project-specific engineering documentation.</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <a href="https://www.meteo.go.tz/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-            <strong className="block text-sm text-slate-900">Tanzania Meteorological Authority (TMA)</strong>
-            <span className="mt-1 block text-xs leading-5 text-slate-600">National meteorological information and rainfall observation context. Use station records with their metadata and quality-control information.</span>
-          </a>
-          <a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-            <strong className="block text-sm text-slate-900">NASA POWER Data Access</strong>
-            <span className="mt-1 block text-xs leading-5 text-slate-600">Gridded meteorological and solar data. Review spatial resolution, temporal coverage, parameter definitions and data limitations.</span>
-          </a>
-          <a href="https://power.larc.nasa.gov/docs/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-            <strong className="block text-sm text-slate-900">NASA POWER Documentation</strong>
-            <span className="mt-1 block text-xs leading-5 text-slate-600">API, parameter and methodology documentation for understanding the gridded climate data.</span>
-          </a>
-          <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-            <strong className="block text-sm text-slate-900">FAO Irrigation and Drainage Paper 56</strong>
-            <span className="mt-1 block text-xs leading-5 text-slate-600">Reference for crop evapotranspiration and irrigation water-requirement concepts. Irrigation climate inputs in this calculator remain manual.</span>
-          </a>
-        </div>
-      </section>
+      {variant === "water" && (
+        <section className="mt-8">
+          <h3 className="text-xl font-bold text-slate-950">Resources &amp; supporting documents</h3>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">Use the original data-provider and technical references below when preparing rainfall inputs or reviewing design assumptions. These links are external references; they are not generated reports or a substitute for project-specific engineering documentation.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <a href="https://www.meteo.go.tz/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+              <strong className="block text-sm text-slate-900">Tanzania Meteorological Authority (TMA)</strong>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">National meteorological information and rainfall observation context. Use station records with their metadata and quality-control information.</span>
+            </a>
+            <a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+              <strong className="block text-sm text-slate-900">NASA POWER Data Access</strong>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Gridded meteorological and solar data. Review spatial resolution, temporal coverage, parameter definitions and data limitations.</span>
+            </a>
+            <a href="https://power.larc.nasa.gov/docs/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+              <strong className="block text-sm text-slate-900">NASA POWER Documentation</strong>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">API, parameter and methodology documentation for understanding the gridded climate data.</span>
+            </a>
+            <a href="https://www.fao.org/4/x0490e/x0490e00.htm" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+              <strong className="block text-sm text-slate-900">FAO Irrigation and Drainage Paper 56</strong>
+              <span className="mt-1 block text-xs leading-5 text-slate-600">Reference for crop evapotranspiration and irrigation water-requirement concepts. Irrigation climate inputs in this calculator remain manual.</span>
+            </a>
+          </div>
+        </section>
+      )}
+
       <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6">
         <p className="max-w-2xl text-sm leading-6 text-slate-600">For detailed examples, practical checks and limitations, see the full YAJU Learning Center guide.</p>
         <Link href={item.guide} className="inline-flex items-center rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800">{item.guideLabel}</Link>
