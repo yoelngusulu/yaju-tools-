@@ -170,14 +170,8 @@ export function calculateDesignDryPeriod(
     if (!endingKnown) {
       markCensored(annual, runStartYear, runEndYear, "interrupted-by-missing-data");
     } else {
-      if (runStartYear < runEndYear) {
-        markCensored(
-          annual,
-          runStartYear,
-          runEndYear - 1,
-          "cross-year-spell-carried-forward"
-        );
-      }
+      // Attribute the full cross-year spell to its ending year without
+      // invalidating the preceding year's own annual maximum.
       const endYearStats = annual.get(runEndYear);
       if (endYearStats) {
         endYearStats.maximumCdd = Math.max(endYearStats.maximumCdd, runLength);
