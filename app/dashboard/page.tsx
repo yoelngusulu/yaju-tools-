@@ -7,6 +7,7 @@ import {
 } from "@/lib/billing/config";
 import { getUserBillingSummary } from "@/lib/billing/subscriptions";
 import { createClient } from "@/lib/supabase/server";
+import { ACTIVE_TOOL_ACTIVITY } from "@/lib/tools/activity";
 
 type Conversion = {
   id: number;
@@ -16,36 +17,34 @@ type Conversion = {
   created_at: string;
 };
 
-const toolLabels: Record<string, string> = {
-  "coordinates-bulk": "Coordinates Bulk",
-  "compress-pdf": "Compress PDF",
-  "split-pdf": "Split PDF",
-  "merge-pdf": "Merge PDF",
-  "protect-pdf": "Protect PDF",
-  "unlock-pdf": "Unlock PDF",
-  "pdf-to-word": "PDF to Word",
-  "pdf-to-excel": "PDF to Excel",
-  "pdf-to-powerpoint": "PDF to PowerPoint",
-  "pdf-to-image": "PDF to Image",
-  "word-to-pdf": "Word to PDF",
-  "image-to-pdf": "Image to PDF",
-  "compress-image": "Compress Image",
-  "jpg-to-png": "JPG to PNG",
-  "png-to-jpg": "PNG to JPG",
-  "webp-to-jpg": "WEBP to JPG",
-  "webp-to-png": "WEBP to PNG",
+type StoredActivity = { id: string; tool_id: keyof typeof ACTIVE_TOOL_ACTIVITY; category: string; event_type: string; occurred_at: string; metadata: Record<string, unknown> | null };
+type LegacyUsageActivity = { id: number; tool: string; created_at: string };
+type DashboardActivity = { id: string; label: string; category: string; detail: string; created_at: string };
+
+const HISTORY_TOOL_IDS: Record<string, keyof typeof ACTIVE_TOOL_ACTIVITY> = {
+  "coordinates-bulk": "coordinates-converter", "coordinates-converter": "coordinates-converter",
+  "epsg-crs-finder": "epsg-crs-finder", "distance-area-bearing": "distance-area-bearing",
+  "ahp-criteria-weighting": "ahp-criteria-weighting", "water-storage": "water-storage",
+  "qr-code-generator": "qr-code-generator", "html-to-pdf": "html-to-pdf",
+  "merge-pdf": "merge-pdf", "split-pdf": "split-pdf", "compress-pdf": "compress-pdf",
+  "pdf-to-word": "pdf-to-word", "pdf-to-excel": "pdf-to-excel",
+  "pdf-to-powerpoint": "pdf-to-powerpoint", "image-to-pdf": "image-to-pdf",
 };
 
-function getToolLabel(tool: string) {
-  return toolLabels[tool] ?? tool;
-}
+function getToolLabel(tool: keyof typeof ACTIVE_TOOL_ACTIVITY) { return ACTIVE_TOOL_ACTIVITY[tool].label; }
+
+const DASHBOARD_TIME_ZONE = "Africa/Dar_es_Salaam";
 
 function formatDate(value: string | null) {
   if (!value) {
     return "Not set";
   }
 
-  return new Date(value).toLocaleString();
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: DASHBOARD_TIME_ZONE }).format(new Date(value));
+}
+
+function localDateKey(value: string | Date) {
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: DASHBOARD_TIME_ZONE }).format(new Date(value));
 }
 
 function formatStatus(status: string | null | undefined) {
@@ -84,18 +83,22 @@ export default async function DashboardPage() {
     premiumPlan.checkoutConfigured &&
     billingSummary.plan !== "PREMIUM";
 
-  const {
-    data: conversions,
-    error: conversionsError,
-  } = await supabase
-    .from("conversion_history")
-    .select(
-      "id, tool, original_file_name, output_file_name, created_at"
-    )
-    .eq("user_id", user.id)
-    .order("created_at", {
-      ascending: false,
-    });
+  const [
+    { data: conversions, error: conversionsError },
+    { data: storedActivities, error: activitiesError },
+    { data: legacyUsage, error: usageError },
+  ] = await Promise.all([
+    supabase.from("conversion_history")
+      .select("id, tool, original_file_name, output_file_name, created_at")
+      .eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("tool_activity")
+      .select("id, tool_id, category, event_type, occurred_at, metadata")
+      .eq("user_id", user.id).eq("success", true)
+      .order("occurred_at", { ascending: false }),
+    supabase.from("conversion_usage").select("id, tool, created_at")
+      .eq("user_id", user.id).eq("tool", "water-storage-csv")
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (conversionsError) {
     console.error(
@@ -103,23 +106,25 @@ export default async function DashboardPage() {
       conversionsError
     );
   }
+  if (activitiesError) console.error("Unable to load tool activity:", activitiesError);
+  if (usageError) console.error("Unable to load legacy Water Storage activity:", usageError);
 
   const history = (conversions as Conversion[] | null) ?? [];
-  const totalConversions = history.length;
-
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  const todayConversions = history.filter(
-    (conversion) =>
-      new Date(conversion.created_at) >= startOfToday
-  ).length;
-
-  const recentConversions = history.slice(0, 10);
+  const active = (storedActivities as StoredActivity[] | null) ?? [];
+  const priorUsage = (legacyUsage as LegacyUsageActivity[] | null) ?? [];
+  const activityHistoryIds = new Set(active.map((item) => item.metadata?.conversionHistoryId).filter((id): id is number => typeof id === "number"));
+  const activities: DashboardActivity[] = [
+    ...active.map((item) => ({ id: item.id, label: getToolLabel(item.tool_id), category: item.category, detail: "Operation completed", created_at: item.occurred_at })),
+    ...priorUsage.map((item) => ({ id: `legacy-usage-${item.id}`, label: "Water Storage & Tank Sizing", category: ACTIVE_TOOL_ACTIVITY["water-storage"].category, detail: "Rainfall dataset analysis completed", created_at: item.created_at })),
+    ...history.filter((item) => !activityHistoryIds.has(item.id) && HISTORY_TOOL_IDS[item.tool]).map((item) => {
+      const tool = HISTORY_TOOL_IDS[item.tool];
+      return { id: `conversion-${item.id}`, label: getToolLabel(tool), category: ACTIVE_TOOL_ACTIVITY[tool].category, detail: "File conversion completed", created_at: item.created_at };
+    }),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const totalActivities = activities.length;
+  const todayKey = localDateKey(new Date());
+  const todayActivities = activities.filter((item) => localDateKey(item.created_at) === todayKey).length;
+  const recentActivities = activities.slice(0, 10);
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-12">
@@ -141,19 +146,19 @@ export default async function DashboardPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-gray-500">
-              Today&apos;s Conversions
+              Today&apos;s Activity
             </p>
             <p className="mt-2 text-3xl font-bold text-gray-900">
-              {todayConversions}
+              {todayActivities}
             </p>
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <p className="text-sm text-gray-500">
-              Total Conversions
+              Total Activity
             </p>
             <p className="mt-2 text-3xl font-bold text-gray-900">
-              {totalConversions}
+              {totalActivities}
             </p>
           </div>
 
@@ -338,7 +343,7 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Recent Conversions
+                Recent Activity
               </h2>
 
               <p className="mt-1 text-sm text-gray-500">
@@ -348,7 +353,7 @@ export default async function DashboardPage() {
 
             <div className="flex items-center gap-3">
               <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-600">
-                {totalConversions} total
+                {totalActivities} total
               </span>
 
               <Link
@@ -360,14 +365,14 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {recentConversions.length === 0 ? (
+          {recentActivities.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
               <p className="font-medium text-gray-700">
-                No conversions yet
+                No activity yet
               </p>
 
               <p className="mt-2 text-sm text-gray-500">
-                Your conversion history will appear here after you use a tool.
+                Successful activity across YAJU tools will appear here.
               </p>
             </div>
           ) : (
@@ -379,39 +384,39 @@ export default async function DashboardPage() {
                       Tool
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Original File
+                      Category
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Output File
+                      Details
                     </th>
                     <th className="px-4 py-3 font-medium">
-                      Date
+                      Date (EAT)
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {recentConversions.map((conversion) => (
+                  {recentActivities.map((activity) => (
                     <tr
-                      key={conversion.id}
+                      key={activity.id}
                       className="border-b border-gray-100 text-sm"
                     >
                       <td className="px-4 py-4">
                         <span className="rounded-lg bg-blue-50 px-3 py-1.5 font-medium text-blue-700">
-                          {getToolLabel(conversion.tool)}
+                          {activity.label}
                         </span>
                       </td>
 
                       <td className="px-4 py-4 text-gray-700">
-                        {conversion.original_file_name}
+                        {activity.category}
                       </td>
 
                       <td className="px-4 py-4 text-gray-700">
-                        {conversion.output_file_name}
+                        {activity.detail}
                       </td>
 
                       <td className="px-4 py-4 text-gray-500">
-                        {formatDate(conversion.created_at)}
+                        {formatDate(activity.created_at)}
                       </td>
                     </tr>
                   ))}

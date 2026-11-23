@@ -13,7 +13,7 @@ import {
   isPythonRuntimeError,
   runNativeExecutable,
 } from "@/lib/nativeExecutables";
-import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { checkUsageLimit, releaseUsageReservation } from "@/lib/supabase/usageLimit";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 export const runtime = "nodejs";
@@ -33,10 +33,11 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.unavailable ? 503 : 429,
       }
     );
   }
+  let usageCommitted = !usage.reservationId;
 
   const tempDirectory = path.join(
     os.tmpdir(),
@@ -189,7 +190,9 @@ export async function POST(
         usage.identityType,
       identityId:
         usage.identityId,
+      reservationId: usage.reservationId,
     });
+    usageCommitted = true;
 
     return new NextResponse(
       outputBuffer,
@@ -240,6 +243,7 @@ export async function POST(
       }
     );
   } finally {
+    if (!usageCommitted) await releaseUsageReservation(usage).catch((error) => console.error("Unable to release failed PDF-to-PowerPoint quota:", error));
     await fs.rm(
       tempDirectory,
       {

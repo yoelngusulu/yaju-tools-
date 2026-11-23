@@ -21,6 +21,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type MeasurementMode = "distance" | "area";
 type InputFormat = "decimal" | "dms" | "utm";
@@ -1777,6 +1778,7 @@ export default function DistanceAreaCalculatorPage() {
 
   async function copySummary() {
     await navigator.clipboard.writeText(summaryLines.join("\n"));
+    void recordToolActivity("distance-area-bearing", { operation: "copy" }).catch((error) => console.error("Unable to record measurement activity:", error));
     setCopyLabel("Copied");
 
     window.setTimeout(() => {
@@ -1865,6 +1867,7 @@ export default function DistanceAreaCalculatorPage() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+    void recordToolActivity("distance-area-bearing", { operation: "export" }).catch((error) => console.error("Unable to record measurement activity:", error));
   }
 
   return (

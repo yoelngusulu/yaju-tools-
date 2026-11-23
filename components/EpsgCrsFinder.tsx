@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type CrsRecord = {
   code: number;
@@ -168,6 +169,7 @@ export default function EpsgCrsFinder() {
 
   async function copyValue(label: string, value: string) {
     await navigator.clipboard.writeText(value);
+    void recordToolActivity("epsg-crs-finder", { operation: "copy" }).catch((error) => console.error("Unable to record CRS activity:", error));
     setCopied(label);
     window.setTimeout(() => setCopied(null), 1800);
   }
@@ -228,7 +230,10 @@ export default function EpsgCrsFinder() {
                   <button
                     key={record.code}
                     type="button"
-                    onClick={() => setSelectedCode(record.code)}
+                    onClick={() => {
+                      setSelectedCode(record.code);
+                      void recordToolActivity("epsg-crs-finder", { operation: "select" }).catch((error) => console.error("Unable to record CRS activity:", error));
+                    }}
                     className={`w-full rounded-lg border p-4 text-left transition ${
                       active
                         ? "border-blue-500 bg-blue-50"

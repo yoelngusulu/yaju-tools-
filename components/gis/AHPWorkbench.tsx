@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Info, Plus, Printer, RotateCcw, Scale, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import styles from "./AHPWorkbench.module.css";
 import {
@@ -10,6 +10,7 @@ import {
   MAX_CRITERIA, MIN_CRITERIA, pairKey,
   type AHPResult, type PairwiseJudgments, type PreferenceDirection,
 } from "@/lib/gis/ahp";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 const INITIAL_CRITERIA = ["Criterion 1", "Criterion 2", "Criterion 3", "Criterion 4"];
 const SAATY_OPTIONS = Array.from({ length: 8 }, (_, index) => index + 2);
@@ -89,6 +90,9 @@ export default function AHPWorkbench() {
     catch (error) { return { result: null as AHPResult | null, error: error instanceof Error ? error.message : "Unable to calculate AHP weights." }; }
   }, [complete, namesValid, matrix]);
   const result = calculation.result;
+  useEffect(() => {
+    if (result) void recordToolActivity("ahp-criteria-weighting").catch((error) => console.error("Unable to record AHP activity:", error));
+  }, [result]);
   const progress = pairs.length ? completed / pairs.length * 100 : 0;
   const ranked = result ? result.weights.map((weight, index) => ({ weight, name: criteria[index], index })).sort((a, b) => b.weight - a.weight) : [];
 

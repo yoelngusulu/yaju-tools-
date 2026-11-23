@@ -25,7 +25,7 @@ function getPlans(): Plan[] {
         "PDF split and merge",
         "AHP Criteria Weighting Calculator with CSV, Excel and Print / PDF exports (free)",
         "Other basic tools with ads",
-        "2 free bulk coordinate conversions per 24 hours",
+        "Bulk coordinates: 2 successful conversions per 24 hours for guests; 5 for registered Free users",
       ],
       cta: "Use Free Tools",
       href: "/tools",

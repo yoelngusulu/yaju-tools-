@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import { recordToolActivity } from "@/lib/tools/activity";
 import Link from "next/link";
 import { ArrowLeft, Download, QrCode } from "lucide-react";
 
@@ -136,6 +137,7 @@ export default function QRCodeGenerator() {
     anchor.click();
     anchor.remove();
     if (format === "svg") URL.revokeObjectURL(url);
+    void recordToolActivity("qr-code-generator", { operation: "download", fileType: format }).catch((error) => console.error("Unable to record QR activity:", error));
   };
 
   const label = { website: "Website URL", text: "Plain text", email: "Email address", phone: "Telephone number" }[type as Exclude<ContentType, "wifi">];

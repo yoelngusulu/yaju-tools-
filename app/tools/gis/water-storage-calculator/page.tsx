@@ -14,6 +14,7 @@ import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
 import RainfallUploadPanel from "@/components/RainfallUploadPanel";
 import type { UploadedRainfallAnalysis } from "@/features/hydrology/domain/rainfall-upload";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type Mode = "rainwater" | "pump" | "irrigation" | "dimensions";
 type ResultRow = { id: string; label: string; value: string };
@@ -94,6 +95,7 @@ const withPrimaryLitres = (
 });
 
 export default function WaterStorageCalculatorPage() {
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [mode, setMode] = useState<Mode>("rainwater");
   const [site, setSite] = useState<GeographicPoint | null>(null);
   const [coordinateX, setCoordinateX] = useState("");
@@ -344,6 +346,12 @@ export default function WaterStorageCalculatorPage() {
     height, length, width, freeboardHeight, deadStorage,
   ]);
 
+  useEffect(() => {
+    if (hasInteracted && calculation.result) {
+      void recordToolActivity("water-storage", { mode, operation: "calculate" }).catch((error) => console.error("Unable to record water storage activity:", error));
+    }
+  }, [calculation, hasInteracted, mode]);
+
   const field = (
     label: string,
     value: string,
@@ -429,7 +437,7 @@ export default function WaterStorageCalculatorPage() {
   const calculatedResult = calculation.result;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+    <main onClick={() => setHasInteracted(true)} className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px]">
         <Link
           href="/tools/gis"

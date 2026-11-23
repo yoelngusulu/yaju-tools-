@@ -14,6 +14,7 @@ import {
 import * as XLSX from "xlsx";
 
 import { saveConversionHistory } from "@/lib/supabase/conversionHistory";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type Mode =
   | "dd-to-dms"
@@ -2020,6 +2021,7 @@ export default function CoordinatesConverterPage() {
   async function copyResult() {
     if (result) {
       await navigator.clipboard.writeText(result);
+      void recordToolActivity("coordinates-converter", { operation: "copy" }).catch((error) => console.error("Unable to record coordinate activity:", error));
     }
   }
 

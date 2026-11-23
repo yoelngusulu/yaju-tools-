@@ -1,46 +1,15 @@
-import { randomUUID } from "crypto";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 import { analyseUploadedRainfall, type DailyRainfallRecord } from "@/features/hydrology/domain/rainfall-upload";
-import { getActivePremiumSubscription } from "@/lib/billing/subscriptions";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { getUsageIdentity, reserveToolUsage, finishToolUsage } from "@/lib/supabase/toolUsage";
+import { recordToolActivityServer } from "@/lib/supabase/recordToolActivity";
 import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const GUEST_COOKIE_NAME = "docmaster_guest_id";
-const BULK_LIMIT = 2;
-const WINDOW_HOURS = 24;
 const MAX_RECORDS = 50_000;
-type Identity = { userId: string | null; guestId: string | null };
-
-async function getIdentity(): Promise<{ identity: Identity; premium: boolean }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const premium = Boolean(
-      await getActivePremiumSubscription(user.id)
-      || ["premium", "pro", "paid"].includes(String(user.app_metadata?.plan ?? "").toLowerCase())
-      || ["premium", "pro", "paid"].includes(String(user.app_metadata?.subscription ?? "").toLowerCase())
-    );
-    return { identity: { userId: user.id, guestId: null }, premium };
-  }
-
-  const cookieStore = await cookies();
-  let guestId = cookieStore.get(GUEST_COOKIE_NAME)?.value;
-  if (!guestId) {
-    guestId = randomUUID();
-    cookieStore.set(GUEST_COOKIE_NAME, guestId, {
-      httpOnly: true, sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/", maxAge: 60 * 60 * 24 * 365,
-    });
-  }
-  return { identity: { userId: null, guestId }, premium: false };
-}
 
 function validateRecords(value: unknown): DailyRainfallRecord[] | null {
   if (!Array.isArray(value) || value.length < 2 || value.length > MAX_RECORDS) return null;
@@ -64,7 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => null) as { records?: unknown } | null;
+  const body = await request.json().catch(() => null) as { records?: unknown; eventId?: unknown } | null;
   if (!body) return NextResponse.json({ error: "Invalid rainfall analysis request." }, { status: 400 });
 
   const records = validateRecords(body.records);
@@ -74,44 +43,39 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
   }
 
-  const { identity, premium } = await getIdentity();
-  const admin = createAdminClient();
-  let reservationId: number | null = null;
+  const identity = await getUsageIdentity().catch((error) => {
+    console.error("Unable to verify rainfall analysis identity:", error);
+    return null;
+  });
+  if (!identity) return NextResponse.json({ error: "Usage verification is temporarily unavailable. Please try again shortly." }, { status: 503 });
 
-  if (!premium) {
-    const { data, error } = await admin.rpc("reserve_water_storage_csv_usage", {
-      p_user_id: identity.userId,
-      p_guest_id: identity.guestId,
-      p_limit: BULK_LIMIT,
-      p_window_hours: WINDOW_HOURS,
-    });
-
-    if (error) {
+  let reservationId: string | null = null;
+  if (!identity.premium) {
+    const reservation = await reserveToolUsage("water-storage-csv", identity).catch((error) => {
       console.error("Unable to reserve rainfall CSV quota:", error);
-      return NextResponse.json({ error: "Usage verification is temporarily unavailable. Please try again shortly." }, { status: 503 });
-    }
-
-    const reservation = Array.isArray(data) ? data[0] : data;
-    if (!reservation?.allowed) {
-      return NextResponse.json({
-        error: "You have reached the free rainfall CSV/Excel analysis limit of 2 successful bulk analyses in 24 hours. Single-point rainfall lookups and manual single-point inputs remain unlimited.",
-        used: reservation?.used ?? BULK_LIMIT,
-        limit: BULK_LIMIT,
-        remaining: 0,
-      }, { status: 429 });
-    }
-    reservationId = Number(reservation.reservation_id);
+      return null;
+    });
+    if (!reservation) return NextResponse.json({ error: "Usage verification is temporarily unavailable. Please try again shortly." }, { status: 503 });
+    if (!reservation.allowed) return NextResponse.json({
+      error: "You have reached the free rainfall CSV/Excel analysis limit for this tool in the rolling 24-hour period. Single-point rainfall lookups and manual single-point inputs remain unlimited.",
+      used: reservation.used,
+      limit: identity.userId ? 5 : 2,
+      remaining: 0,
+    }, { status: 429 });
+    reservationId = reservation.reservationId;
   }
 
   try {
     const analysis = analyseUploadedRainfall(records);
-    return NextResponse.json({ analysis, quota: premium ? { unlimited: true } : { used: true, limit: BULK_LIMIT } });
+    if (reservationId) await finishToolUsage(reservationId, identity, true);
+    const eventId = typeof body.eventId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.eventId) ? body.eventId : randomUUID();
+    try { await recordToolActivityServer({ eventId, toolId: "water-storage", identity, metadata: { mode: "rainfall-upload", operation: "analyze", itemCount: records.length } }); }
+    catch (activityError) { console.error("Unable to record rainfall analysis activity:", activityError); }
+    return NextResponse.json({ analysis, quota: identity.premium ? { unlimited: true } : { used: true, limit: identity.userId ? 5 : 2 } });
   } catch (error) {
     if (reservationId !== null) {
-      const { error: releaseError } = await admin.rpc("release_water_storage_csv_usage", {
-        p_reservation_id: reservationId,
-      });
-      if (releaseError) console.error("Unable to release failed rainfall analysis quota:", releaseError);
+      try { await finishToolUsage(reservationId, identity, false); }
+      catch (releaseError) { console.error("Unable to release failed rainfall analysis quota:", releaseError); }
     }
     const message = error instanceof Error ? error.message : "Rainfall analysis failed.";
     return NextResponse.json({ error: message }, { status: 422 });
