@@ -17,6 +17,16 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   const [analysis, setAnalysis] = useState<UploadedRainfallAnalysis | null>(null);
 
   const maxMonthly = useMemo(() => Math.max(1, ...(analysis?.monthlyRainfall.map((item) => item.rainfallMm ?? 0) ?? [])), [analysis]);
+  const dailyChart = useMemo(() => {
+    if (!analysis) return { path: "", max: 1, thresholdY: 190 };
+    const max = Math.max(1, ...analysis.records.map((item) => item.rainfallMm));
+    const path = analysis.records.map((item, index) => {
+      const x = analysis.records.length < 2 ? 0 : (index / (analysis.records.length - 1)) * 1000;
+      const y = 190 - (item.rainfallMm / max) * 170;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(" ");
+    return { path, max, thresholdY: 190 - (1 / max) * 170 };
+  }, [analysis]);
 
   async function handleFile(file?: File) {
     if (!file) return;
@@ -108,7 +118,23 @@ export default function RainfallUploadPanel({ onApply }: Props) {
               {analysis.monthlyRainfall.map((item) => <div key={item.monthNumber} className="min-w-0 text-center"><div className="flex h-24 items-end justify-center rounded bg-slate-50"><div title={item.rainfallMm === null ? "Insufficient coverage" : `${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{ height: item.rainfallMm === null ? "0%" : `${Math.max(3, item.rainfallMm / maxMonthly * 100)}%` }} /></div><span className="mt-1 block text-[10px] text-slate-500">{item.month}</span></div>)}
             </div>
           </div>
-          <p className="text-[11px] leading-5 text-slate-500">Daily rainfall below 1 mm/day is classified as dry. Annual CDD requires at least 90% daily coverage; at least 80% of years in the uploaded period must be valid for the 90th-percentile estimate. Missing days are not treated as dry.</p>
+          <div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold text-slate-800">Daily rainfall time series (mm/day)</p>
+              <span className="text-[10px] text-slate-500">{analysis.records.length.toLocaleString()} observations · red dashed line = 1 mm/day dry threshold</span>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <svg viewBox="0 0 1000 210" role="img" aria-label="Daily rainfall time series with 1 millimetre per day dry threshold" className="h-44 min-w-[620px] w-full">
+                <line x1="0" y1={dailyChart.thresholdY} x2="1000" y2={dailyChart.thresholdY} stroke="#dc2626" strokeDasharray="7 5" strokeWidth="2" />
+                <line x1="0" y1="190" x2="1000" y2="190" stroke="#94a3b8" />
+                <path d={dailyChart.path} fill="none" stroke="#2563eb" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+                <text x="6" y="14" fontSize="11" fill="#475569">{dailyChart.max.toFixed(1)} mm/day</text>
+                <text x="6" y="205" fontSize="11" fill="#475569">{analysis.records[0]?.date}</text>
+                <text x="994" y="205" textAnchor="end" fontSize="11" fill="#475569">{analysis.records.at(-1)?.date}</text>
+              </svg>
+            </div>
+          </div>
+          <p className="text-[11px] leading-5 text-slate-500">Daily rainfall below 1 mm/day is classified as dry. Annual CDD requires at least 90% daily coverage; at least 80% of years in the uploaded period must be valid for the 90th-percentile estimate. Missing days are not treated as dry. Spells crossing year boundaries follow the existing CDD convention; boundary- or gap-censored spells are excluded from valid annual maxima.</p>
           {analysis.dryPeriod.status === "ready" ? <p className="text-xs font-semibold text-emerald-700">Uploaded dataset applied. Design dry period: {analysis.dryPeriod.valueDays} days (nearest-rank 90th percentile).</p> : <p className="text-xs text-amber-800">{analysis.dryPeriod.message}</p>}
         </div>
       )}
