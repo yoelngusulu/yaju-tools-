@@ -9,8 +9,12 @@ type Props = { onApply: (analysis: UploadedRainfallAnalysis, fileName: string) =
 export default function RainfallUploadPanel({ onApply }: Props) {
   const [rows, setRows] = useState<unknown[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
+  const [dateMode, setDateMode] = useState<"single" | "components">("single");
   const [dateColumn, setDateColumn] = useState("0");
-  const [rainfallColumn, setRainfallColumn] = useState("1");
+  const [yearColumn, setYearColumn] = useState("0");
+  const [monthColumn, setMonthColumn] = useState("1");
+  const [dayColumn, setDayColumn] = useState("2");
+  const [rainfallColumn, setRainfallColumn] = useState("3");
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<{ records: ReturnType<typeof parseRainfallRows>["records"]; errors: string[] } | null>(null);
@@ -42,10 +46,18 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       if (data.length < 2 || !Array.isArray(data[0])) throw new Error("The first worksheet must contain a header row and daily rainfall records.");
       const names = data[0].map((value, index) => String(value ?? `Column ${index + 1}`));
       setRows(data); setHeaders(names); setFileName(file.name);
-      const dateGuess = names.findIndex((name) => /date|day|time/i.test(name));
-      const rainGuess = names.findIndex((name) => /rain|precip|ppt/i.test(name));
+      const yearGuess = names.findIndex((name) => /^year$/i.test(name.trim()));
+      const monthGuess = names.findIndex((name) => /^month$/i.test(name.trim()));
+      const dayGuess = names.findIndex((name) => /^day$/i.test(name.trim()));
+      const dateGuess = names.findIndex((name) => /^(date|datetime|timestamp)$/i.test(name.trim()));
+      const rainGuess = names.findIndex((name) => /rain|precip|ppt|nduta|station|gauge/i.test(name));
+      const hasDateParts = yearGuess >= 0 && monthGuess >= 0 && dayGuess >= 0;
+      setDateMode(hasDateParts ? "components" : "single");
+      setYearColumn(String(yearGuess >= 0 ? yearGuess : 0));
+      setMonthColumn(String(monthGuess >= 0 ? monthGuess : 1));
+      setDayColumn(String(dayGuess >= 0 ? dayGuess : 2));
       setDateColumn(String(dateGuess >= 0 ? dateGuess : 0));
-      setRainfallColumn(String(rainGuess >= 0 ? rainGuess : (names.length > 1 ? 1 : 0)));
+      setRainfallColumn(String(rainGuess >= 0 ? rainGuess : (hasDateParts && names.length > 3 ? 3 : (names.length > 1 ? 1 : 0))));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not read this rainfall file.");
     }
@@ -53,7 +65,10 @@ export default function RainfallUploadPanel({ onApply }: Props) {
 
   function validateAndApply() {
     try {
-      const parsed = parseRainfallRows(rows, Number(dateColumn), Number(rainfallColumn));
+      const dateColumns = dateMode === "components"
+        ? { yearColumn: Number(yearColumn), monthColumn: Number(monthColumn), dayColumn: Number(dayColumn) }
+        : Number(dateColumn);
+      const parsed = parseRainfallRows(rows, dateColumns, Number(rainfallColumn));
       setPreview({ records: parsed.records, errors: parsed.errors });
       if (parsed.errors.length) {
         setError(`Found ${parsed.errors.length} invalid or duplicate row(s). Correct the source file before applying it.`);
@@ -73,7 +88,7 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900">Upload daily rainfall data</h3>
-          <p className="mt-1 text-xs text-slate-600">Use .xlsx, .xls or .csv with one date column and one daily rainfall column in mm/day.</p>
+          <p className="mt-1 text-xs text-slate-600">Use .xlsx, .xls or .csv. Supports a Date column or TMA YEAR, MONTH, DAY columns plus station rainfall columns in mm/day.</p>
         </div>
         <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">EXCEL / CSV</span>
       </div>
@@ -82,12 +97,29 @@ export default function RainfallUploadPanel({ onApply }: Props) {
         <>
           <p className="mt-2 text-xs font-medium text-slate-700">File: {fileName} · {Math.max(0, rows.length - 1)} data rows</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="text-xs font-semibold text-slate-700">Date column
-              <select value={dateColumn} onChange={(event) => setDateColumn(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-sm">
-                {headers.map((header, index) => <option key={index} value={index}>{header}</option>)}
+            <label className="text-xs font-semibold text-slate-700">Date format
+              <select value={dateMode} onChange={(event) => setDateMode(event.target.value as "single" | "components")} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-sm">
+                <option value="single">Single Date column</option><option value="components">TMA YEAR / MONTH / DAY</option>
               </select>
             </label>
-            <label className="text-xs font-semibold text-slate-700">Rainfall column (mm/day)
+            {dateMode === "single" ? (
+              <label className="text-xs font-semibold text-slate-700">Date column
+                <select value={dateColumn} onChange={(event) => setDateColumn(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-sm">
+                  {headers.map((header, index) => <option key={index} value={index}>{header}</option>)}
+                </select>
+              </label>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {([{label:"YEAR",value:yearColumn,set:setYearColumn},{label:"MONTH",value:monthColumn,set:setMonthColumn},{label:"DAY",value:dayColumn,set:setDayColumn}] as const).map((item) => (
+                  <label key={item.label} className="text-xs font-semibold text-slate-700">{item.label}
+                    <select value={item.value} onChange={(event) => item.set(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-sm">
+                      {headers.map((header, index) => <option key={index} value={index}>{header}</option>)}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            )}
+            <label className="text-xs font-semibold text-slate-700">Rainfall station column (mm/day)
               <select value={rainfallColumn} onChange={(event) => setRainfallColumn(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-sm">
                 {headers.map((header, index) => <option key={index} value={index}>{header}</option>)}
               </select>
