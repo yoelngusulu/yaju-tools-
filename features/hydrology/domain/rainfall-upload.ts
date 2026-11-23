@@ -103,7 +103,7 @@ export function analyseUploadedRainfall(records: DailyRainfallRecord[]): Uploade
     monthly.set(monthKey, monthStats);
   }
   const validAnnualTotals = [...annual.entries()]
-    .filter(([year, item]) => item.valid / (new Date(Date.UTC(year + 1, 0, 1)).getTime() - Date.UTC(year, 0, 1)) * DAY_MS >= 0.9);
+    .filter(([year, item]) => item.valid / ((Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / DAY_MS) >= 0.9);
   if (!validAnnualTotals.length) {
     throw new Error("No calendar year has at least 90% daily rainfall coverage. Check the date range and missing records.");
   }
