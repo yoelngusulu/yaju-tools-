@@ -396,6 +396,24 @@ export default function WaterStorageCalculatorPage() {
     }
   };
 
+  const clearSelectedSite = () => {
+    setRainfallRequestVersion((version) => version + 1);
+    setSite(null);
+    setCoordinateX("");
+    setCoordinateY("");
+    setCoordinateZ("");
+    setCoordinateError(null);
+    setRainfall("");
+    setRainfallData(null);
+    setRainfallLoading(false);
+    setRainfallError(null);
+    setDryDays("");
+    setDryPeriodMode("automatic");
+    setDryPeriodError(null);
+    setUploadedRainfallAnalysis(null);
+    setUploadedRainfallFile(null);
+    setRainfallMode("automatic");
+  };
   const requestRainfallForSelectedSite = () => {
     if (!site || rainfallLoading) return;
     setRainfallError(null);
@@ -770,6 +788,7 @@ export default function WaterStorageCalculatorPage() {
               catchmentPolygon={catchmentPolygon}
               catchmentAreaM2={catchmentAreaSource === "map" ? Number(catchmentArea) : null}
               onSiteSelect={selectSite}
+              onSiteClear={clearSelectedSite}
               onCatchmentComplete={(areaM2, points) => {
                 setCatchmentPolygon(points);
                 setCatchmentArea(String(Number(areaM2.toFixed(1))));
