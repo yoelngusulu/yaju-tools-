@@ -366,6 +366,8 @@ export default function WaterStorageCalculatorPage() {
 
   const selectSite = (point: GeographicPoint) => {
     setRainfallLoading(false);
+    setUploadedRainfallAnalysis(null);
+    setUploadedRainfallFile(null);
     setSite(point);
     setCoordinateX(String(point.longitude));
     setCoordinateY(String(point.latitude));
@@ -679,6 +681,8 @@ export default function WaterStorageCalculatorPage() {
                 </div>
               )}
               {mode === "rainwater" && <RainfallUploadPanel onApply={(analysis, fileName) => {
+                setRainfallData(null);
+                setRainfallError(null);
                 setUploadedRainfallAnalysis(analysis);
                 setUploadedRainfallFile(fileName);
                 setRainfall(String(Math.round(analysis.annualRainfallMm * 10) / 10));
