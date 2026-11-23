@@ -407,9 +407,6 @@ export default async function DashboardPage() {
                     <th className="px-4 py-3 font-medium">
                       Date (EAT)
                     </th>
-                    <th className="px-4 py-3 font-medium">
-                      Date
-                    </th>
                   </tr>
                 </thead>
 
