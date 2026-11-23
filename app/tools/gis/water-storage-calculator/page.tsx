@@ -215,6 +215,11 @@ export default function WaterStorageCalculatorPage() {
             message: "Select a site on the map to retrieve rainfall, or enter annual rainfall manually.",
           };
         }
+        if (!dryDays.trim()) {
+          return {
+            message: "Enter a verified design dry period (days) to calculate recommended storage. The uploaded record does not contain enough valid years for an automatic CDD estimate; no value has been assumed.",
+          };
+        }
         const result = calculateAnnualRainwaterSizing({
           rainfallMm: value(rainfall, "Annual rainfall"),
           catchmentAreaM2: value(catchmentArea, "Catchment area"),
@@ -391,6 +396,24 @@ export default function WaterStorageCalculatorPage() {
     }
   };
 
+  const clearSelectedSite = () => {
+    setRainfallRequestVersion((version) => version + 1);
+    setSite(null);
+    setCoordinateX("");
+    setCoordinateY("");
+    setCoordinateZ("");
+    setCoordinateError(null);
+    setRainfall("");
+    setRainfallData(null);
+    setRainfallLoading(false);
+    setRainfallError(null);
+    setDryDays("");
+    setDryPeriodMode("automatic");
+    setDryPeriodError(null);
+    setUploadedRainfallAnalysis(null);
+    setUploadedRainfallFile(null);
+    setRainfallMode("automatic");
+  };
   const requestRainfallForSelectedSite = () => {
     if (!site || rainfallLoading) return;
     setRainfallError(null);
@@ -765,6 +788,7 @@ export default function WaterStorageCalculatorPage() {
               catchmentPolygon={catchmentPolygon}
               catchmentAreaM2={catchmentAreaSource === "map" ? Number(catchmentArea) : null}
               onSiteSelect={selectSite}
+              onSiteClear={clearSelectedSite}
               onCatchmentComplete={(areaM2, points) => {
                 setCatchmentPolygon(points);
                 setCatchmentArea(String(Number(areaM2.toFixed(1))));

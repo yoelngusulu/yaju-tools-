@@ -14,6 +14,7 @@ type Props = {
   catchmentPolygon: GeographicPoint[];
   catchmentAreaM2: number | null;
   onSiteSelect: (point: GeographicPoint) => void;
+  onSiteClear: () => void;
   onCatchmentComplete: (areaM2: number, points: GeographicPoint[]) => void;
   onCatchmentClear: () => void;
 };
@@ -23,6 +24,7 @@ export default function WaterStorageMapPreview({
   catchmentPolygon,
   catchmentAreaM2,
   onSiteSelect,
+  onSiteClear,
   onCatchmentComplete,
   onCatchmentClear,
 }: Props) {
@@ -208,13 +210,27 @@ export default function WaterStorageMapPreview({
       <div className="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-3">
         <button
           type="button"
-          onClick={() => setMode(interactionMode === "site" ? null : "site")}
+          onClick={() => {
+            setDraftPoints([]);
+            setMapError(null);
+            setMode(interactionMode === "site" ? null : "site");
+          }}
           aria-pressed={interactionMode === "site"}
           className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${interactionMode === "site" ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"}`}
         >
           <Crosshair size={16} />
           Select site
         </button>
+        {site && (
+          <button
+            type="button"
+            onClick={() => { onSiteClear(); setMode(null); setMapError(null); }}
+            className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+          >
+            <Trash2 size={15} />
+            Clear selected site
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
