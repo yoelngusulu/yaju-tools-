@@ -187,10 +187,42 @@ export const learningArticles: LearningArticle[] = [
         ]
       },
       {
+        heading: "Prepare and analyse daily rainfall records",
+        paragraphs: [
+          "The Water Storage Calculator accepts daily rainfall records from an Excel workbook (.xlsx or .xls) or a CSV file. The date may be provided in a single Date, Datetime or Timestamp column, or as separate YEAR, MONTH and DAY columns. Select the rainfall series column that contains daily values in millimetres per day (mm/day), review the preview and validate the dates and values before applying the dataset.",
+          "The uploaded-data analysis summarises the record period, valid annual totals and mean annual rainfall. It also provides long-term mean monthly rainfall climatology, annual rainfall totals and a daily rainfall time series. The monthly climatology represents the mean of valid monthly rainfall totals for each calendar month across the available years. PNG downloads are available for the monthly climatology, annual totals and daily time-series charts."
+        ],
+        bullets: [
+          "Accepted formats: .xlsx, .xls and .csv; maximum file size: 10 MB.",
+          "The upload supports up to 50,000 daily records.",
+          "Check date completeness, duplicate dates, non-negative rainfall values, units and the selected rainfall series.",
+          "One uploaded dataset counts as one bulk analysis, regardless of its number of rows."
+        ]
+      },
+      {
+        heading: "Interpret the consecutive dry-day estimate",
+        paragraphs: [
+          "The calculator's consecutive dry-day (CDD) method classifies a day with rainfall below 1 mm/day as dry. An annual maximum is considered valid only when that year has at least 90% daily coverage, and at least 80% of years in the uploaded record must be valid before the nearest-rank 90th-percentile estimate is reported. Missing observations are not treated as dry days.",
+          "If the record does not meet the coverage requirements, the calculator does not invent a result; provide a verified dry-period value from an appropriate source or study. Review the record period and data gaps before using a dry-period estimate in a storage design."
+        ],
+        bullets: [
+          "The 90th percentile is the calculator's selected design statistic, not an ETCCDI requirement.",
+          "An unavailable estimate must not be interpreted as zero dry days.",
+          "Use a documented manual value when the uploaded record is insufficient."
+        ]
+      },
+      {
+        heading: "Understand the rainfall upload limits",
+        paragraphs: [
+          "Bulk Excel and CSV rainfall analysis has a dedicated usage quota. Free accounts can complete two successful bulk analyses in each rolling 24-hour period, while active Premium accounts have unlimited bulk analyses. A complete uploaded dataset counts as one analysis, irrespective of row count.",
+          "Single-point NASA POWER rainfall retrievals and manual single-point rainfall inputs do not consume the bulk-file quota. Invalid files are rejected before a quota reservation is made; the file-size and daily-record limits still apply."
+        ]
+      },
+      {
         heading: "Using gridded rainfall data responsibly",
         paragraphs: [
-          "Gridded climate products provide estimated rainfall values for grid cells and can be useful where gauge observations are limited. They are not identical to measurements from a local rain gauge. Grid resolution, missing data, terrain, distance from the selected point and the product's temporal coverage can influence the result.",
-          "When a calculator retrieves rainfall automatically, check the selected site, the returned grid location, units, record period and data source. Where possible, compare the result with quality-controlled local station data. Record the source and retrieval date so the estimate can be reviewed later."
+          "Gridded climate products provide estimated rainfall values for grid cells and can be useful where ground observations are limited. They are not identical to measurements from a local rain gauge. Grid resolution, missing data, terrain, distance from the selected point and the product's temporal coverage can influence the result.",
+          "When a calculator retrieves rainfall automatically, check the selected site, the returned grid location, units, record period and data source. Where possible, compare the result with quality-controlled local rain-gauge observations. Record the source and retrieval date so the estimate can be reviewed later."
         ]
       },
       {
