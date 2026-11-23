@@ -42,9 +42,19 @@ function parseDate(value: unknown): string | null {
   return null;
 }
 
+export type RainfallDateColumns = number | { yearColumn: number; monthColumn: number; dayColumn: number };
+
+function parseDateParts(yearValue: unknown, monthValue: unknown, dayValue: unknown): string | null {
+  const year = Number(yearValue), month = Number(monthValue), day = Number(dayValue);
+  if (![year, month, day].every(Number.isInteger) || year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() + 1 === month && date.getUTCDate() === day
+    ? date.toISOString().slice(0, 10) : null;
+}
+
 export function parseRainfallRows(
   rows: unknown[][],
-  dateColumn: number,
+  dateColumns: RainfallDateColumns,
   rainfallColumn: number
 ): { records: DailyRainfallRecord[]; errors: string[]; duplicateDates: string[] } {
   const records: DailyRainfallRecord[] = [];
@@ -52,7 +62,7 @@ export function parseRainfallRows(
   const seen = new Set<string>();
   const duplicateDates: string[] = [];
   rows.slice(1).forEach((row, index) => {
-    const date = parseDate(row[dateColumn]);
+    const date = typeof dateColumns === "number"\n      ? parseDate(row[dateColumns])\n      : parseDateParts(row[dateColumns.yearColumn], row[dateColumns.monthColumn], row[dateColumns.dayColumn]);
     const rawRainfall = row[rainfallColumn];
     if ((rawRainfall === null || rawRainfall === undefined || rawRainfall === "") && !date) return;
     if (!date) {
