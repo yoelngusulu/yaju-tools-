@@ -38,3 +38,25 @@ test("does not calculate annual rainfall from a year with less than 90 percent c
   }
   assert.throws(() => analyseUploadedRainfall(records), /90% daily rainfall coverage/);
 });
+
+
+test("parses TMA YEAR, MONTH and DAY columns with a selected station rainfall column", () => {
+  const parsed = parseRainfallRows([
+    ["YEAR", "MONTH", "DAY", "Nduta_1", "Nduta_2"],
+    [2001, 1, 1, 0, 0],
+    [2001, 1, 2, 15.5, 9.4],
+    [2001, 1, 3, 3.4, 2.6],
+  ], { yearColumn: 0, monthColumn: 1, dayColumn: 2 }, 3);
+  assert.equal(parsed.errors.length, 0);
+  assert.deepEqual(parsed.records.map((record) => record.date), ["2001-01-01", "2001-01-02", "2001-01-03"]);
+  assert.deepEqual(parsed.records.map((record) => record.rainfallMm), [0, 15.5, 3.4]);
+});
+
+test("rejects invalid calendar dates in split TMA date columns", () => {
+  const parsed = parseRainfallRows([
+    ["YEAR", "MONTH", "DAY", "Nduta_1"],
+    [2001, 2, 29, 4],
+  ], { yearColumn: 0, monthColumn: 1, dayColumn: 2 }, 3);
+  assert.equal(parsed.records.length, 0);
+  assert.match(parsed.errors[0], /invalid or missing date/);
+});
