@@ -161,7 +161,6 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   }
 
   async function validateAndApply() {
-    let reservationId: number | null = null;
     try {
       const dateColumns = dateMode === "components"
         ? { yearColumn: Number(yearColumn), monthColumn: Number(monthColumn), dayColumn: Number(dayColumn) }
@@ -177,37 +176,27 @@ export default function RainfallUploadPanel({ onApply }: Props) {
         setAnalysis(null);
         return;
       }
-
       if (parsed.records.length < 2) {
         throw new Error("Upload at least two valid daily rainfall records for bulk analysis.");
       }
 
-      const quotaResponse = await fetch("/api/tools/water-storage-csv-usage", {
+      const response = await fetch("/api/tools/water-storage-csv-usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reserve" }),
+        body: JSON.stringify({ records: parsed.records }),
       });
-      const quotaPayload = await quotaResponse.json().catch(() => ({}));
-      if (!quotaResponse.ok) {
-        throw new Error(quotaPayload.error || "Rainfall CSV usage could not be verified.");
-      }
-      reservationId = Number.isSafeInteger(quotaPayload.reservationId)
-        ? quotaPayload.reservationId
-        : null;
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "Rainfall CSV analysis could not be completed.");
 
-      const result = analyseUploadedRainfall(parsed.records);
+      const result = payload.analysis as UploadedRainfallAnalysis;
+      if (!result || !Array.isArray(result.records) || !Array.isArray(result.monthlyRainfall)) {
+        throw new Error("The rainfall analysis service returned an invalid response.");
+      }
       setAnalysis(result);
       setSelectedYear(String(result.endYear));
       setError("");
       onApply(result, fileName);
     } catch (cause) {
-      if (reservationId !== null) {
-        await fetch("/api/tools/water-storage-csv-usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "release", reservationId }),
-        }).catch(() => undefined);
-      }
       setAnalysis(null);
       setError(cause instanceof Error ? cause.message : "Rainfall analysis failed.");
     }
