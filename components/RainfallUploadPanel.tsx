@@ -123,6 +123,10 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   async function handleFile(file?: File) {
     if (!file) return;
     setError(""); setAnalysis(null); setPreview(null);
+    if (file.size > 10 * 1024 * 1024) {
+      setError("The uploaded rainfall file must be 10 MB or smaller. Split larger datasets into separate files.");
+      return;
+    }
     if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
       setError("Choose an Excel (.xlsx/.xls) or CSV file."); return;
     }
@@ -132,6 +136,9 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: null });
       if (data.length < 2 || !Array.isArray(data[0])) throw new Error("The first worksheet must contain a header row and daily rainfall records.");
+      if (data.length - 1 > 50_000) {
+        throw new Error("The uploaded dataset exceeds the 50,000 daily-record limit. Split the dataset into smaller date ranges.");
+      }
       const names = data[0].map((value, index) => String(value ?? `Column ${index + 1}`));
       setRows(data); setHeaders(names); setFileName(file.name);
       const yearGuess = names.findIndex((name) => /^year$/i.test(name.trim()));
@@ -211,7 +218,7 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900">Upload daily rainfall data</h3>
-          <p className="mt-1 text-xs text-slate-600">Use .xlsx, .xls or .csv. Supports a Date column or TMA YEAR, MONTH, DAY columns plus station rainfall columns in mm/day.</p>
+          <p className="mt-1 text-xs text-slate-600">Use .xlsx, .xls or .csv. Supports a Date column or TMA YEAR, MONTH, DAY columns plus station rainfall columns in mm/day. Maximum file size: 10 MB; maximum 50,000 daily records.</p>
         </div>
         <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">EXCEL / CSV</span>
       </div>
