@@ -12,6 +12,8 @@ import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
 import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology/domain/geometry";
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
+import RainfallUploadPanel from "@/components/RainfallUploadPanel";
+import type { UploadedRainfallAnalysis } from "@/features/hydrology/domain/rainfall-upload";
 
 type Mode = "rainwater" | "pump" | "irrigation" | "dimensions";
 type ResultRow = { id: string; label: string; value: string };
@@ -105,6 +107,8 @@ export default function WaterStorageCalculatorPage() {
   const [rainfall, setRainfall] = useState("");
   const [rainfallMode, setRainfallMode] = useState<"automatic" | "manual">("automatic");
   const [rainfallData, setRainfallData] = useState<RainfallData | null>(null);
+  const [uploadedRainfallAnalysis, setUploadedRainfallAnalysis] = useState<UploadedRainfallAnalysis | null>(null);
+  const [uploadedRainfallFile, setUploadedRainfallFile] = useState<string | null>(null);
   const [rainfallLoading, setRainfallLoading] = useState(false);
   const [rainfallError, setRainfallError] = useState<string | null>(null);
   const [rainfallRequestVersion, setRainfallRequestVersion] = useState(0);
@@ -673,6 +677,26 @@ export default function WaterStorageCalculatorPage() {
                     </>
                   )}
                 </div>
+              )}
+              {mode === "rainwater" && <RainfallUploadPanel onApply={(analysis, fileName) => {
+                setUploadedRainfallAnalysis(analysis);
+                setUploadedRainfallFile(fileName);
+                setRainfall(String(Math.round(analysis.annualRainfallMm * 10) / 10));
+                setRainfallMode("manual");
+                if (analysis.dryPeriod.status === "ready" && analysis.dryPeriod.valueDays !== null) {
+                  setDryDays(String(analysis.dryPeriod.valueDays));
+                  setDryPeriodMode("automatic");
+                  setDryPeriodError(null);
+                } else {
+                  setDryDays("");
+                  setDryPeriodMode("manual");
+                  setDryPeriodError(analysis.dryPeriod.message ?? "Insufficient daily rainfall coverage for a design dry period.");
+                }
+              }} />}
+              {mode === "rainwater" && uploadedRainfallAnalysis && (
+                <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                  <strong>Uploaded rainfall dataset active:</strong> {uploadedRainfallFile}. Uploaded annual rainfall and daily CDD analysis are used in the storage calculation.
+                </p>
               )}
             </div>
 
