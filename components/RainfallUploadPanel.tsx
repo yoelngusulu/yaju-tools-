@@ -153,7 +153,8 @@ export default function RainfallUploadPanel({ onApply }: Props) {
     }
   }
 
-  function validateAndApply() {
+  async function validateAndApply() {
+    let reservationId: number | null = null;
     try {
       const dateColumns = dateMode === "components"
         ? { yearColumn: Number(yearColumn), monthColumn: Number(monthColumn), dayColumn: Number(dayColumn) }
@@ -161,16 +162,45 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       if (rainfallColumn === "" || !Number.isInteger(Number(rainfallColumn)) || Number(rainfallColumn) < 0) {
         throw new Error("No rainfall station column was detected. Upload the complete TMA file containing daily rainfall values (mm/day), or select the station rainfall column.");
       }
+
       const parsed = parseRainfallRows(rows, dateColumns, Number(rainfallColumn));
       setPreview({ records: parsed.records, errors: parsed.errors });
       if (parsed.errors.length) {
         setError(`Found ${parsed.errors.length} invalid or duplicate row(s). Correct the source file before applying it.`);
-        setAnalysis(null); return;
+        setAnalysis(null);
+        return;
       }
+
+      if (parsed.records.length < 2) {
+        throw new Error("Upload at least two valid daily rainfall records for bulk analysis.");
+      }
+
+      const quotaResponse = await fetch("/api/tools/water-storage-csv-usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reserve" }),
+      });
+      const quotaPayload = await quotaResponse.json().catch(() => ({}));
+      if (!quotaResponse.ok) {
+        throw new Error(quotaPayload.error || "Rainfall CSV usage could not be verified.");
+      }
+      reservationId = Number.isSafeInteger(quotaPayload.reservationId)
+        ? quotaPayload.reservationId
+        : null;
+
       const result = analyseUploadedRainfall(parsed.records);
-      setAnalysis(result); setSelectedYear(String(result.endYear)); setError("");
+      setAnalysis(result);
+      setSelectedYear(String(result.endYear));
+      setError("");
       onApply(result, fileName);
     } catch (cause) {
+      if (reservationId !== null) {
+        await fetch("/api/tools/water-storage-csv-usage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "release", reservationId }),
+        }).catch(() => undefined);
+      }
       setAnalysis(null);
       setError(cause instanceof Error ? cause.message : "Rainfall analysis failed.");
     }
