@@ -670,6 +670,23 @@ export default function WaterStorageCalculatorPage() {
                           </div>
                         ))}
                       </div>
+                      <div className="mt-3 rounded-lg border border-blue-100 bg-white p-3">
+                        <p className="mb-2 text-xs font-bold text-slate-800">Monthly rainfall distribution</p>
+                        <div className="grid grid-cols-6 items-end gap-2 sm:grid-cols-12">
+                          {rainfallData.monthlyRainfall.map((month) => {
+                            const maxRainfall = Math.max(1, ...rainfallData.monthlyRainfall.map((item) => item.rainfallMm));
+                            return (
+                              <div key={month.monthNumber} className="min-w-0 text-center">
+                                <div className="flex h-24 items-end justify-center rounded bg-slate-50">
+                                  <div title={`${month.rainfallMm.toFixed(1)} mm/month`} className="w-full rounded-t bg-blue-600" style={{ height: `${Math.max(3, month.rainfallMm / maxRainfall * 100)}%` }} />
+                                </div>
+                                <span className="mt-1 block text-[10px] text-slate-500">{month.month}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="mt-2 text-[10px] text-slate-500">Mean monthly climate rainfall totals (mm/month), aggregated from daily records.</p>
+                      </div>
                       {rainfallMode === "manual" && (
                         <p className="mt-2 text-slate-600">NASA POWER values remain visible as a reference; your manually entered annual rainfall is used.</p>
                       )}
