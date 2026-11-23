@@ -109,7 +109,6 @@ export default function ToolLearningContent({ variant }: { variant: Variant }) {
           <h3 className="text-xl font-bold text-slate-950">Resources &amp; supporting documents</h3>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">Use the original data-provider and technical references below when preparing rainfall inputs or reviewing design assumptions. These links are external references; they are not generated reports or a substitute for project-specific engineering documentation.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        </a>
             <a href="https://power.larc.nasa.gov/" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
               <strong className="block text-sm text-slate-900">NASA POWER Data Access</strong>
               <span className="mt-1 block text-xs leading-5 text-slate-600">Gridded meteorological and solar data. Review spatial resolution, temporal coverage, parameter definitions and data limitations.</span>
