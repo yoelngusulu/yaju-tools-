@@ -14,6 +14,7 @@ type Props = {
   catchmentPolygon: GeographicPoint[];
   catchmentAreaM2: number | null;
   onSiteSelect: (point: GeographicPoint) => void;
+  onSiteClear: () => void;
   onCatchmentComplete: (areaM2: number, points: GeographicPoint[]) => void;
   onCatchmentClear: () => void;
 };
@@ -23,6 +24,7 @@ export default function WaterStorageMapPreview({
   catchmentPolygon,
   catchmentAreaM2,
   onSiteSelect,
+  onSiteClear,
   onCatchmentComplete,
   onCatchmentClear,
 }: Props) {
@@ -215,6 +217,16 @@ export default function WaterStorageMapPreview({
           <Crosshair size={16} />
           Select site
         </button>
+        {site && (
+          <button
+            type="button"
+            onClick={() => { onSiteClear(); setMode(null); setMapError(null); }}
+            className="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+          >
+            <Trash2 size={15} />
+            Clear selected site
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
