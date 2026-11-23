@@ -58,7 +58,7 @@ test("rainfall below 1 mm/day is dry, while exactly 1 mm/day is wet", () => {
   assert.equal(result.annualMaximumCdd[0].cddDays, 1);
 });
 
-test("a dry spell crossing December and January is continuous and attributed to its ending year", () => {
+test("a dry spell crossing December and January is attributed to its ending year without invalidating the prior year", () => {
   const values = completeSeries(2001, 2022);
   for (let day = 28; day <= 31; day += 1) values[`200112${day}`] = 0;
   for (let day = 1; day <= 5; day += 1) values[`2002010${day}`] = 0;
@@ -69,9 +69,11 @@ test("a dry spell crossing December and January is continuous and attributed to 
     endYear: 2022,
   });
 
-  assert.equal(result.annualMaximumCdd[0].status, "cross-year-spell-carried-forward");
-  assert.equal(result.annualMaximumCdd[0].cddDays, null);
+  assert.equal(result.annualMaximumCdd[0].status, "valid");
+  assert.equal(result.annualMaximumCdd[0].cddDays, 0);
+  assert.equal(result.annualMaximumCdd[1].status, "valid");
   assert.equal(result.annualMaximumCdd[1].cddDays, 9);
+  assert.equal(result.validYears, 22);
 });
 
 test("a missing day does not count as dry and censors an active dry spell", () => {
