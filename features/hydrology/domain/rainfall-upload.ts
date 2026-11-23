@@ -62,7 +62,9 @@ export function parseRainfallRows(
   const seen = new Set<string>();
   const duplicateDates: string[] = [];
   rows.slice(1).forEach((row, index) => {
-    const date = typeof dateColumns === "number"\n      ? parseDate(row[dateColumns])\n      : parseDateParts(row[dateColumns.yearColumn], row[dateColumns.monthColumn], row[dateColumns.dayColumn]);
+    const date = typeof dateColumns === "number"
+      ? parseDate(row[dateColumns])
+      : parseDateParts(row[dateColumns.yearColumn], row[dateColumns.monthColumn], row[dateColumns.dayColumn]);
     const rawRainfall = row[rainfallColumn];
     if ((rawRainfall === null || rawRainfall === undefined || rawRainfall === "") && !date) return;
     if (!date) {
