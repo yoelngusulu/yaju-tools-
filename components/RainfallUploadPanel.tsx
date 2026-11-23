@@ -188,6 +188,20 @@ export default function RainfallUploadPanel({ onApply }: Props) {
                 {activeChartData.map((item) => <div key={item.label} className="min-w-0 text-center"><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{height: `${Math.max(2, item.rainfallMm / chartMax * 100)}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
               </div>
             </div>
+            <button type="button" onClick={() => {
+              const width = chartPeriod === "yearly" ? Math.max(900, activeChartData.length * 48) : 1000;
+              const height = 440, left = 58, right = 20, top = 28, bottom = 62;
+              const plotWidth = width - left - right, plotHeight = height - top - bottom;
+              const slot = plotWidth / Math.max(1, activeChartData.length);
+              const bars = activeChartData.map((item, index) => {
+                const barHeight = item.rainfallMm / chartMax * plotHeight;
+                const x = left + index * slot + slot * 0.18;
+                const y = top + plotHeight - barHeight;
+                return `<rect x="${x}" y="${y}" width="${slot * 0.64}" height="${barHeight}" fill="#2563eb"/><text x="${x + slot * 0.32}" y="${height - 30}" text-anchor="middle" font-size="12" fill="#334155">${item.label}</text>`;
+              }).join("");
+              const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="white"/><text x="${left}" y="20" font-size="16" font-weight="bold" fill="#0f172a">${chartPeriod === "monthly" ? `Monthly rainfall totals - ${selectedYear || analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</text><line x1="${left}" y1="${top + plotHeight}" x2="${width-right}" y2="${top + plotHeight}" stroke="#94a3b8"/>${bars}<text x="18" y="${top + plotHeight/2}" transform="rotate(-90 18 ${top + plotHeight/2})" font-size="12" fill="#475569">Rainfall (mm)</text></svg>`;
+              downloadChartPng(`rainfall-${chartPeriod}-graph.png`, svg, width, height);
+            }} className="mt-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Download {chartPeriod} graph (PNG)</button>
           </div>
           <div>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -203,6 +217,10 @@ export default function RainfallUploadPanel({ onApply }: Props) {
                 <text x="6" y="205" fontSize="11" fill="#475569">{analysis.records[0]?.date}</text>
                 <text x="994" y="205" textAnchor="end" fontSize="11" fill="#475569">{analysis.records.at(-1)?.date}</text>
               </svg>
+              <button type="button" onClick={() => {
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="420" viewBox="0 0 1000 210"><rect width="100%" height="100%" fill="white"/><line x1="0" y1="${dailyChart.thresholdY}" x2="1000" y2="${dailyChart.thresholdY}" stroke="#dc2626" stroke-dasharray="7 5" stroke-width="2"/><line x1="0" y1="190" x2="1000" y2="190" stroke="#94a3b8"/><path d="${dailyChart.path}" fill="none" stroke="#2563eb" stroke-width="1.4"/><text x="6" y="14" font-size="11" fill="#475569">${dailyChart.max.toFixed(1)} mm/day</text><text x="6" y="205" font-size="11" fill="#475569">${analysis.records[0]?.date ?? ""}</text><text x="994" y="205" text-anchor="end" font-size="11" fill="#475569">${analysis.records.at(-1)?.date ?? ""}</text></svg>`;
+                downloadChartPng("daily-rainfall-time-series.png", svg, 2000, 420);
+              }} className="mt-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Download daily graph (PNG)</button>
             </div>
           </div>
           <p className="text-[11px] leading-5 text-slate-500">Daily rainfall below 1 mm/day is classified as dry. Annual CDD requires at least 90% daily coverage; at least 80% of years in the uploaded period must be valid for the 90th-percentile estimate. Missing days are not treated as dry. Spells crossing year boundaries follow the existing CDD convention; boundary- or gap-censored spells are excluded from valid annual maxima.</p>
