@@ -66,14 +66,12 @@ export default function RainfallUploadPanel({ onApply }: Props) {
   }, [analysis]);
   const monthlyChartData = useMemo(() => {
     if (!analysis) return [];
-    const year = Number(selectedYear || analysis.endYear);
-    const totals = Array.from({ length: 12 }, (_, index) => ({ label: new Date(Date.UTC(2000, index, 1)).toLocaleString("en", { month: "short", timeZone: "UTC" }), rainfallMm: 0 }));
-    for (const record of analysis.records) {
-      const y = Number(record.date.slice(0, 4)), month = Number(record.date.slice(5, 7)) - 1;
-      if (y === year && month >= 0 && month < 12) totals[month].rainfallMm += record.rainfallMm;
-    }
-    return totals;
-  }, [analysis, selectedYear]);
+    return analysis.monthlyRainfall.map((item) => ({
+      label: item.month,
+      rainfallMm: item.rainfallMm ?? 0,
+      sampleYears: item.sampleYears,
+    }));
+  }, [analysis]);
   const activeChartData = chartPeriod === "yearly" ? annualChartData : monthlyChartData;
   const chartMax = Math.max(1, ...activeChartData.map((item) => item.rainfallMm));
   const dailyChart = useMemo(() => {
@@ -211,13 +209,13 @@ export default function RainfallUploadPanel({ onApply }: Props) {
                 <select aria-label="Rainfall graph period" value={chartPeriod} onChange={(event) => setChartPeriod(event.target.value as "monthly" | "yearly")} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700">
                   <option value="monthly">Monthly</option><option value="yearly">Yearly</option>
                 </select>
-                {chartPeriod === "monthly" && <select aria-label="Select year for monthly rainfall graph" value={selectedYear || String(analysis.endYear)} onChange={(event) => setSelectedYear(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">{Array.from({length: analysis.endYear - analysis.startYear + 1}, (_, i) => analysis.startYear + i).map((year) => <option key={year} value={year}>{year}</option>)}</select>}
+                {chartPeriod === "monthly" && <span className="text-[10px] text-slate-500">Long-term monthly mean</span>}
               </div>
             </div>
-            <p className="mb-2 text-[10px] text-slate-500">{chartPeriod === "monthly" ? `Monthly rainfall totals for ${selectedYear || analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</p>
+            <p className="mb-2 text-[10px] text-slate-500">{chartPeriod === "monthly" ? `Mean monthly rainfall, ${analysis.startYear}–${analysis.endYear} (mm/month; average of valid monthly totals across years)` : "Annual rainfall totals (mm/year)"}</p>
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
               <div className={chartPeriod === "yearly" ? "flex min-w-max items-end gap-1" : "grid grid-cols-6 items-end gap-1 sm:grid-cols-12"}>
-                {activeChartData.map((item) => <div key={item.label} className={chartPeriod === "yearly" ? "w-8 shrink-0 text-center" : "min-w-0 text-center"}><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm`} className="w-full rounded-t bg-blue-600" style={{height: `${Math.max(2, item.rainfallMm / chartMax * 100)}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
+                {activeChartData.map((item) => <div key={item.label} className={chartPeriod === "yearly" ? "w-8 shrink-0 text-center" : "min-w-0 text-center"}><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm${"sampleYears" in item ? `; based on ${item.sampleYears} valid years` : ""}`} className="w-full rounded-t bg-blue-600" style={{height: `${item.rainfallMm > 0 ? Math.max(2, item.rainfallMm / chartMax * 100) : 0}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
               </div>
             </div>
             <button type="button" onClick={() => {
@@ -231,8 +229,8 @@ export default function RainfallUploadPanel({ onApply }: Props) {
                 const y = top + plotHeight - barHeight;
                 return `<rect x="${x}" y="${y}" width="${slot * 0.64}" height="${barHeight}" fill="#2563eb"/><text x="${x + slot * 0.32}" y="${height - 30}" text-anchor="middle" font-size="12" fill="#334155">${item.label}</text>`;
               }).join("");
-              const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="white"/><text x="${left}" y="20" font-size="16" font-weight="bold" fill="#0f172a">${chartPeriod === "monthly" ? `Monthly rainfall totals - ${selectedYear || analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</text><line x1="${left}" y1="${top + plotHeight}" x2="${width-right}" y2="${top + plotHeight}" stroke="#94a3b8"/>${bars}<text x="18" y="${top + plotHeight/2}" transform="rotate(-90 18 ${top + plotHeight/2})" font-size="12" fill="#475569">Rainfall (mm)</text></svg>`;
-              downloadChartPng(`rainfall-${chartPeriod}-graph.png`, svg, width, height);
+              const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="white"/><text x="${left}" y="20" font-size="16" font-weight="bold" fill="#0f172a">${chartPeriod === "monthly" ? `Mean monthly rainfall - ${analysis.startYear} to ${analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</text><line x1="${left}" y1="${top + plotHeight}" x2="${width-right}" y2="${top + plotHeight}" stroke="#94a3b8"/>${bars}<text x="18" y="${top + plotHeight/2}" transform="rotate(-90 18 ${top + plotHeight/2})" font-size="12" fill="#475569">Rainfall (mm)</text></svg>`;
+              downloadChartPng(chartPeriod === "monthly" ? "mean-monthly-rainfall-climatology.png" : "annual-rainfall-totals.png", svg, width, height);
             }} className="mt-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Download {chartPeriod} graph (PNG)</button>
           </div>
           <div>
