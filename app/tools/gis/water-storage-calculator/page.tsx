@@ -215,6 +215,11 @@ export default function WaterStorageCalculatorPage() {
             message: "Select a site on the map to retrieve rainfall, or enter annual rainfall manually.",
           };
         }
+        if (!dryDays.trim()) {
+          return {
+            message: "Enter a verified design dry period (days) to calculate recommended storage. The uploaded record does not contain enough valid years for an automatic CDD estimate; no value has been assumed.",
+          };
+        }
         const result = calculateAnnualRainwaterSizing({
           rainfallMm: value(rainfall, "Annual rainfall"),
           catchmentAreaM2: value(catchmentArea, "Catchment area"),
