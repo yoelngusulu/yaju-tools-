@@ -39,6 +39,37 @@ function downloadChartPng(fileName: string, svgMarkup: string, width: number, he
   image.src = objectUrl;
 }
 
+type RainfallChartPoint = { label: string; rainfallMm: number; sampleYears?: number };
+
+function getRainfallAxisScale(maxValue: number) {
+  const raw = Math.max(1, maxValue);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const fraction = raw / magnitude;
+  const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+  const axisMax = niceFraction * magnitude;
+  const step = axisMax / 5;
+  return { axisMax, ticks: Array.from({ length: 6 }, (_, index) => Number((step * index).toFixed(6))) };
+}
+
+function buildRainfallChartSvg(data: RainfallChartPoint[], title: string, unit: string, width: number, height: number) {
+  const left = 82, right = 24, top = 54, bottom = 64;
+  const plotWidth = width - left - right, plotHeight = height - top - bottom;
+  const { axisMax, ticks } = getRainfallAxisScale(Math.max(0, ...data.map((item) => item.rainfallMm)));
+  const slot = plotWidth / Math.max(1, data.length);
+  const grid = ticks.map((tick) => {
+    const y = top + plotHeight - (tick / axisMax) * plotHeight;
+    return `<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="#e2e8f0"/><text x="${left-12}" y="${y+4}" text-anchor="end" font-size="12" fill="#475569">${Number.isInteger(tick) ? tick : tick.toFixed(1)}</text>`;
+  }).join("");
+  const bars = data.map((item, index) => {
+    const barHeight = item.rainfallMm / axisMax * plotHeight;
+    const x = left + index * slot + slot * 0.16;
+    const y = top + plotHeight - barHeight;
+    const barWidth = Math.max(1, slot * 0.68);
+    return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="#2563eb"><title>${item.label}: ${item.rainfallMm.toFixed(1)} ${unit}</title></rect><text x="${x + barWidth/2}" y="${height-30}" text-anchor="middle" font-size="${data.length > 20 ? 9 : 12}" fill="#334155">${item.label}</text>`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="white"/><text x="${left}" y="26" font-size="17" font-weight="bold" fill="#0f172a">${title}</text>${grid}<line x1="${left}" y1="${top+plotHeight}" x2="${width-right}" y2="${top+plotHeight}" stroke="#64748b"/>${bars}<text x="22" y="${top+plotHeight/2}" transform="rotate(-90 22 ${top+plotHeight/2})" text-anchor="middle" font-size="13" fill="#334155">Rainfall (${unit})</text></svg>`;
+}
+
 export default function RainfallUploadPanel({ onApply }: Props) {
   const [rows, setRows] = useState<unknown[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -73,7 +104,11 @@ export default function RainfallUploadPanel({ onApply }: Props) {
     }));
   }, [analysis]);
   const activeChartData = chartPeriod === "yearly" ? annualChartData : monthlyChartData;
-  const chartMax = Math.max(1, ...activeChartData.map((item) => item.rainfallMm));
+  const chartScale = getRainfallAxisScale(Math.max(0, ...activeChartData.map((item) => item.rainfallMm)));
+  const chartMax = chartScale.axisMax;
+  const chartTitle = chartPeriod === "monthly"
+    ? `Mean monthly rainfall - ${analysis?.startYear} to ${analysis?.endYear}`
+    : "Annual rainfall totals";
   const dailyChart = useMemo(() => {
     if (!analysis) return { path: "", max: 1, thresholdY: 190 };
     const max = Math.max(1, ...analysis.records.map((item) => item.rainfallMm));
@@ -213,23 +248,40 @@ export default function RainfallUploadPanel({ onApply }: Props) {
               </div>
             </div>
             <p className="mb-2 text-[10px] text-slate-500">{chartPeriod === "monthly" ? `Mean monthly rainfall, ${analysis.startYear}–${analysis.endYear} (mm/month; average of valid monthly totals across years)` : "Annual rainfall totals (mm/year)"}</p>
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
-              <div className={chartPeriod === "yearly" ? "flex min-w-max items-end gap-1" : "grid grid-cols-6 items-end gap-1 sm:grid-cols-12"}>
-                {activeChartData.map((item) => <div key={item.label} className={chartPeriod === "yearly" ? "w-8 shrink-0 text-center" : "min-w-0 text-center"}><div className="flex h-36 items-end justify-center rounded bg-white"><div title={`${item.label}: ${item.rainfallMm.toFixed(1)} mm${"sampleYears" in item ? `; based on ${item.sampleYears} valid years` : ""}`} className="w-full rounded-t bg-blue-600" style={{height: `${item.rainfallMm > 0 ? Math.max(2, item.rainfallMm / chartMax * 100) : 0}%`}} /></div><span className="mt-1 block truncate text-[9px] text-slate-500">{item.label}</span></div>)}
-              </div>
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-2">
+              <svg viewBox={`0 0 ${chartPeriod === "yearly" ? Math.max(900, activeChartData.length * 48) : 1000} 440`} role="img" aria-label={`${chartTitle}, rainfall in millimetres`} className="h-64 min-w-[620px] w-full">
+                {(() => {
+                  const width = chartPeriod === "yearly" ? Math.max(900, activeChartData.length * 48) : 1000;
+                  const height = 440, left = 82, right = 24, top = 54, bottom = 64;
+                  const plotWidth = width - left - right, plotHeight = height - top - bottom;
+                  const slot = plotWidth / Math.max(1, activeChartData.length);
+                  return (
+                    <>
+                      {chartScale.ticks.map((tick) => {
+                        const y = top + plotHeight - (tick / chartMax) * plotHeight;
+                        return <g key={tick}><line x1={left} y1={y} x2={width-right} y2={y} stroke="#e2e8f0"/><text x={left-12} y={y+4} textAnchor="end" fontSize="12" fill="#475569">{Number.isInteger(tick) ? tick : tick.toFixed(1)}</text></g>;
+                      })}
+                      <line x1={left} y1={top+plotHeight} x2={width-right} y2={top+plotHeight} stroke="#64748b"/>
+                      {activeChartData.map((item,index) => {
+                        const barHeight = item.rainfallMm / chartMax * plotHeight;
+                        const x = left + index * slot + slot * 0.16;
+                        const y = top + plotHeight - barHeight;
+                        const barWidth = Math.max(1, slot * 0.68);
+                        return <g key={item.label}><rect x={x} y={y} width={barWidth} height={barHeight} fill="#2563eb"><title>{item.label}: {item.rainfallMm.toFixed(1)} mm</title></rect><text x={x+barWidth/2} y={height-30} textAnchor="middle" fontSize={activeChartData.length>20?9:12} fill="#334155">{item.label}</text></g>;
+                      })}
+                      <text x="22" y={top+plotHeight/2} transform={`rotate(-90 22 ${top+plotHeight/2})`} textAnchor="middle" fontSize="13" fill="#334155">Rainfall (mm{chartPeriod === "monthly" ? "/month" : "/year"})</text>
+                    </>
+                  );
+                })()}
+              </svg>
             </div>
             <button type="button" onClick={() => {
-              const width = chartPeriod === "yearly" ? Math.max(900, activeChartData.length * 48) : 1000;
-              const height = 440, left = 58, right = 20, top = 28, bottom = 62;
-              const plotWidth = width - left - right, plotHeight = height - top - bottom;
-              const slot = plotWidth / Math.max(1, activeChartData.length);
-              const bars = activeChartData.map((item, index) => {
-                const barHeight = item.rainfallMm / chartMax * plotHeight;
-                const x = left + index * slot + slot * 0.18;
-                const y = top + plotHeight - barHeight;
-                return `<rect x="${x}" y="${y}" width="${slot * 0.64}" height="${barHeight}" fill="#2563eb"/><text x="${x + slot * 0.32}" y="${height - 30}" text-anchor="middle" font-size="12" fill="#334155">${item.label}</text>`;
-              }).join("");
-              const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="white"/><text x="${left}" y="20" font-size="16" font-weight="bold" fill="#0f172a">${chartPeriod === "monthly" ? `Mean monthly rainfall - ${analysis.startYear} to ${analysis.endYear} (mm/month)` : "Annual rainfall totals (mm/year)"}</text><line x1="${left}" y1="${top + plotHeight}" x2="${width-right}" y2="${top + plotHeight}" stroke="#94a3b8"/>${bars}<text x="18" y="${top + plotHeight/2}" transform="rotate(-90 18 ${top + plotHeight/2})" font-size="12" fill="#475569">Rainfall (mm)</text></svg>`;
+              const width = chartPeriod === "yearly" ? Math.max(1400, activeChartData.length * 56) : 1400;
+              const height = 620;
+              const title = chartPeriod === "monthly"
+                ? `Mean monthly rainfall - ${analysis.startYear} to ${analysis.endYear} (mm/month)`
+                : "Annual rainfall totals (mm/year)";
+              const svg = buildRainfallChartSvg(activeChartData, title, chartPeriod === "monthly" ? "mm/month" : "mm/year", width, height);
               downloadChartPng(chartPeriod === "monthly" ? "mean-monthly-rainfall-climatology.png" : "annual-rainfall-totals.png", svg, width, height);
             }} className="mt-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Download {chartPeriod} graph (PNG)</button>
           </div>
