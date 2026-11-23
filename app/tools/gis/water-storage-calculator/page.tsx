@@ -12,6 +12,8 @@ import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
 import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology/domain/geometry";
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
+import RainfallUploadPanel from "@/components/RainfallUploadPanel";
+import type { UploadedRainfallAnalysis } from "@/features/hydrology/domain/rainfall-upload";
 
 type Mode = "rainwater" | "pump" | "irrigation" | "dimensions";
 type ResultRow = { id: string; label: string; value: string };
@@ -105,6 +107,8 @@ export default function WaterStorageCalculatorPage() {
   const [rainfall, setRainfall] = useState("");
   const [rainfallMode, setRainfallMode] = useState<"automatic" | "manual">("automatic");
   const [rainfallData, setRainfallData] = useState<RainfallData | null>(null);
+  const [uploadedRainfallAnalysis, setUploadedRainfallAnalysis] = useState<UploadedRainfallAnalysis | null>(null);
+  const [uploadedRainfallFile, setUploadedRainfallFile] = useState<string | null>(null);
   const [rainfallLoading, setRainfallLoading] = useState(false);
   const [rainfallError, setRainfallError] = useState<string | null>(null);
   const [rainfallRequestVersion, setRainfallRequestVersion] = useState(0);
@@ -362,6 +366,8 @@ export default function WaterStorageCalculatorPage() {
 
   const selectSite = (point: GeographicPoint) => {
     setRainfallLoading(false);
+    setUploadedRainfallAnalysis(null);
+    setUploadedRainfallFile(null);
     setSite(point);
     setCoordinateX(String(point.longitude));
     setCoordinateY(String(point.latitude));
@@ -664,6 +670,23 @@ export default function WaterStorageCalculatorPage() {
                           </div>
                         ))}
                       </div>
+                      <div className="mt-3 rounded-lg border border-blue-100 bg-white p-3">
+                        <p className="mb-2 text-xs font-bold text-slate-800">Monthly rainfall distribution</p>
+                        <div className="grid grid-cols-6 items-end gap-2 sm:grid-cols-12">
+                          {rainfallData.monthlyRainfall.map((month) => {
+                            const maxRainfall = Math.max(1, ...rainfallData.monthlyRainfall.map((item) => item.rainfallMm));
+                            return (
+                              <div key={month.monthNumber} className="min-w-0 text-center">
+                                <div className="flex h-24 items-end justify-center rounded bg-slate-50">
+                                  <div title={`${month.rainfallMm.toFixed(1)} mm/month`} className="w-full rounded-t bg-blue-600" style={{ height: `${Math.max(3, month.rainfallMm / maxRainfall * 100)}%` }} />
+                                </div>
+                                <span className="mt-1 block text-[10px] text-slate-500">{month.month}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="mt-2 text-[10px] text-slate-500">Mean monthly climate rainfall totals (mm/month), aggregated from daily records.</p>
+                      </div>
                       {rainfallMode === "manual" && (
                         <p className="mt-2 text-slate-600">NASA POWER values remain visible as a reference; your manually entered annual rainfall is used.</p>
                       )}
@@ -673,6 +696,28 @@ export default function WaterStorageCalculatorPage() {
                     </>
                   )}
                 </div>
+              )}
+              {mode === "rainwater" && <RainfallUploadPanel onApply={(analysis, fileName) => {
+                setRainfallData(null);
+                setRainfallError(null);
+                setUploadedRainfallAnalysis(analysis);
+                setUploadedRainfallFile(fileName);
+                setRainfall(String(Math.round(analysis.annualRainfallMm * 10) / 10));
+                setRainfallMode("manual");
+                if (analysis.dryPeriod.status === "ready" && analysis.dryPeriod.valueDays !== null) {
+                  setDryDays(String(analysis.dryPeriod.valueDays));
+                  setDryPeriodMode("automatic");
+                  setDryPeriodError(null);
+                } else {
+                  setDryDays("");
+                  setDryPeriodMode("manual");
+                  setDryPeriodError(analysis.dryPeriod.message ?? "Insufficient daily rainfall coverage for a design dry period.");
+                }
+              }} />}
+              {mode === "rainwater" && uploadedRainfallAnalysis && (
+                <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                  <strong>Uploaded rainfall dataset active:</strong> {uploadedRainfallFile}. Uploaded annual rainfall and daily CDD analysis are used in the storage calculation.
+                </p>
               )}
             </div>
 
