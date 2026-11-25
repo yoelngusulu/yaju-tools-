@@ -17,7 +17,7 @@ export default function Hero() {
       <div className="relative mx-auto grid max-w-7xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
         <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} className="text-center lg:text-left">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700"><Sparkles size={18} />Documents · GIS · Fieldwork · Learning</div>
-          <h1 className="mt-4 text-4xl font-bold text-blue-600 sm:text-3xl md:text-5xl">Work Documentser. Get More Done with YAJU Tools.</h1>
+          <h1 className="mt-4 text-4xl font-bold text-blue-600 sm:text-3xl md:text-5xl">Work Smarter. Get More Done with YAJU Tools.</h1>
           <p className="mx-auto mt-6 max-w-xl text-base leading-8 text-gray-600 sm:text-lg lg:mx-0">One practical platform for documents, technical tasks and everyday productivity. Convert and organize files, work with coordinates and measurements, estimate water storage, and access useful digital tools for work, study and field projects.</p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row sm:flex-wrap lg:justify-start">
             <Link href="#tools" className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-md transition hover:bg-blue-700 hover:shadow-lg"><UploadCloud size={20} />Explore YAJU Tools</Link>
