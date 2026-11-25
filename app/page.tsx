@@ -54,17 +54,17 @@ export default async function Home({
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">A practical toolkit</p>
-            <h2 className="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl">Useful tools for fieldwork and everyday tasks</h2>
+            <h2 className="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl">Practical digital support for work, study and field projects</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Some jobs start with a coordinate you need to check. Others involve preparing a report, organizing documents or making a file easier to share. YAJU brings practical tools for these tasks together in one place, so you can go straight to the tool you need.
+              Different tasks often require different tools: preparing a report, organizing learning materials, checking a coordinate system or making a document easier to share. YAJU brings practical tools for these everyday and technical workflows together in one place.
             </p>
           </div>
 
           <div className="mt-10 grid gap-8 md:grid-cols-2">
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <h3 className="text-xl font-semibold text-slate-900">For GIS and fieldwork</h3>
+              <h3 className="text-xl font-semibold text-slate-900">For GIS, fieldwork and technical tasks</h3>
               <p className="mt-3 leading-7 text-slate-600">
-                Not sure which coordinate reference system a map uses? The <Link href="/tools/gis/epsg-crs-finder" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">CRS/EPSG Finder</Link> helps you look up common systems used in Tanzania and East Africa, with details to review before using them in a GIS project. You can also <Link href="/tools/coordinates-converter" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">convert coordinates</Link> and measure <Link href="/tools/gis/distance-area-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">distance or area</Link> from field data.
+                Need to identify a coordinate reference system? The <Link href="/tools/gis/epsg-crs-finder" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">CRS/EPSG Finder</Link> helps you look up common systems used in Tanzania and East Africa, with details to review before using them in a GIS project. You can also <Link href="/tools/coordinates-converter" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">convert coordinates</Link> and measure <Link href="/tools/gis/distance-area-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">distance or area</Link> from field data.
               </p>
               <p className="mt-3 leading-7 text-slate-600">
                 For water planning, the <Link href="/tools/gis/water-storage-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">water storage calculator</Link> helps estimate needs for rainwater harvesting and borehole projects. Check the inputs and assumptions carefully, especially when using an estimate for project planning.
@@ -72,9 +72,9 @@ export default async function Home({
             </article>
 
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <h3 className="text-xl font-semibold text-slate-900">For PDFs, images and QR codes</h3>
+              <h3 className="text-xl font-semibold text-slate-900">For learning, documents and everyday tasks</h3>
               <p className="mt-3 leading-7 text-slate-600">
-                Create a QR code for a website, a message, contact details or a Wi-Fi network. If you have an HTML report, preview it and save it as a PDF. You can also combine several PDFs, split a document into smaller parts, or compress files to make sharing easier.
+                Students, trainers and professionals often work with lecture notes, course materials, assignments, reports and training documents in different formats. YAJU document tools can help convert supported PDFs to Word, Excel or PowerPoint, combine several PDF files, split documents into smaller parts and compress PDFs for easier sharing and storage. Create QR codes for websites, messages, contact details or Wi-Fi networks. If you have an HTML report, preview it and save it as a PDF. You can also combine several PDFs, split a document into smaller parts, or compress files to make sharing easier.
               </p>
               <p className="mt-3 leading-7 text-slate-600">
                 When you need to work with a document in another format, convert a PDF to <Link href="/tools/pdf/pdf-to-word" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">Word</Link>, <Link href="/tools/pdf/pdf-to-excel" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">Excel</Link> or <Link href="/tools/pdf/pdf-to-powerpoint" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">PowerPoint</Link>. Image tools let you turn images into PDFs or reduce image file sizes.
@@ -83,9 +83,9 @@ export default async function Home({
           </div>
 
           <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/70 p-6 sm:p-8">
-            <h3 className="text-xl font-semibold text-slate-900">Getting started</h3>
+            <h3 className="text-xl font-semibold text-slate-900">A straightforward way to get started</h3>
             <p className="mt-3 leading-7 text-slate-700">
-              Choose a tool and follow the instructions on its page. Enter the requested details or select your file, then review the result before downloading it. For measurements and water storage, treat the result as a planning estimate and compare it with your project requirements.
+              Choose a tool that matches your task, provide the requested information or select your file, then review the result. Each tool provides instructions to guide you through its supported workflow. For technical calculations, check the assumptions and confirm that the results meet your project requirements.
             </p>
           </div>
         </div>
