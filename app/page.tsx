@@ -33,9 +33,7 @@ export default async function Home({
 
   return (
     <main>
-      {/* Hero section */}
       <Hero />
-      {/* Main tool categories */}
       <ToolCategories />
       <Suspense fallback={null}>
         <ConditionalGoogleAd
@@ -43,71 +41,134 @@ export default async function Home({
           className="my-12"
         />
       </Suspense>
-      {/* Website features */}
       <Features />
-      {/* How the platform works */}
       <HowItWorks />
-      {/* Popular tools */}
       <PopularTools />
-      {/* Helpful overview of YAJU tools */}
+
       <section className="bg-white px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">A practical toolkit</p>
-            <h2 className="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl">Practical digital support for work, study and field projects</h2>
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+              One platform, practical possibilities
+            </p>
+            <h2 className="mt-3 text-3xl font-bold text-slate-900 sm:text-4xl">
+              Practical digital support for work, study and field projects
+            </h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Different tasks often require different tools: preparing a report, organizing learning materials, checking a coordinate system or making a document easier to share. YAJU brings practical tools for these everyday and technical workflows together in one place.
+              Different tasks often require different tools: preparing a report,
+              organizing learning materials, checking a coordinate system or
+              making a document easier to share. YAJU brings practical tools
+              for these everyday and technical workflows together in one place.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-8 md:grid-cols-2">
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <h3 className="text-xl font-semibold text-slate-900">For GIS, fieldwork and technical tasks</h3>
+              <h3 className="text-xl font-semibold text-slate-900">
+                For learning, documents and training
+              </h3>
               <p className="mt-3 leading-7 text-slate-600">
-                Need to identify a coordinate reference system? The <Link href="/tools/gis/epsg-crs-finder" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">CRS/EPSG Finder</Link> helps you look up common systems used in Tanzania and East Africa, with details to review before using them in a GIS project. You can also <Link href="/tools/coordinates-converter" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">convert coordinates</Link> and measure <Link href="/tools/gis/distance-area-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">distance or area</Link> from field data.
+                Students, trainers and professionals often work with lecture
+                notes, course materials, assignments, reports and training
+                documents in different formats. YAJU document tools can help
+                convert supported PDFs to Word, Excel or PowerPoint, combine
+                several PDF files, split documents into smaller parts and
+                compress PDFs for easier sharing and storage.
               </p>
               <p className="mt-3 leading-7 text-slate-600">
-                For water planning, the <Link href="/tools/gis/water-storage-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">water storage calculator</Link> helps estimate needs for rainwater harvesting and borehole projects. Check the inputs and assumptions carefully, especially when using an estimate for project planning.
+                Available learning resources also help explain supported
+                workflows so users can prepare their files more confidently.
               </p>
             </article>
 
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-              <h3 className="text-xl font-semibold text-slate-900">For learning, documents and everyday tasks</h3>
+              <h3 className="text-xl font-semibold text-slate-900">
+                For GIS, fieldwork and technical tasks
+              </h3>
               <p className="mt-3 leading-7 text-slate-600">
-                Students, trainers and professionals often work with lecture notes, course materials, assignments, reports and training documents in different formats. YAJU document tools can help convert supported PDFs to Word, Excel or PowerPoint, combine several PDF files, split documents into smaller parts and compress PDFs for easier sharing and storage. Create QR codes for websites, messages, contact details or Wi-Fi networks. If you have an HTML report, preview it and save it as a PDF. You can also combine several PDFs, split a document into smaller parts, or compress files to make sharing easier.
+                Need to identify a coordinate reference system? The{" "}
+                <Link href="/tools/gis/epsg-crs-finder" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">
+                  CRS/EPSG Finder
+                </Link>{" "}
+                helps you look up coordinate systems. You can also{" "}
+                <Link href="/tools/coordinates-converter" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">
+                  convert coordinates
+                </Link>{" "}
+                and calculate{" "}
+                <Link href="/tools/gis/distance-area-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">
+                  distances and areas
+                </Link>{" "}
+                for mapping and field tasks.
               </p>
               <p className="mt-3 leading-7 text-slate-600">
-                When you need to work with a document in another format, convert a PDF to <Link href="/tools/pdf/pdf-to-word" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">Word</Link>, <Link href="/tools/pdf/pdf-to-excel" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">Excel</Link> or <Link href="/tools/pdf/pdf-to-powerpoint" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">PowerPoint</Link>. Image tools let you turn images into PDFs or reduce image file sizes.
+                The{" "}
+                <Link href="/tools/gis/water-storage-calculator" className="font-medium text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900">
+                  Water Storage Calculator
+                </Link>{" "}
+                supports water storage estimation for rainwater harvesting
+                and related planning. Review its inputs and assumptions before
+                applying estimates to a project.
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+              <h3 className="text-xl font-semibold text-slate-900">
+                For everyday digital tasks
+              </h3>
+              <p className="mt-3 leading-7 text-slate-600">
+                Create QR codes for websites, messages, contact details or
+                Wi-Fi networks. Turn supported HTML files into PDFs, convert
+                images to PDF, and use document tools to prepare files for
+                sharing, submission or archiving.
+              </p>
+              <p className="mt-3 leading-7 text-slate-600">
+                Open the tool you need, follow its instructions and review
+                the output before downloading or sharing it.
               </p>
             </article>
           </div>
 
           <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/70 p-6 sm:p-8">
-            <h3 className="text-xl font-semibold text-slate-900">A straightforward way to get started</h3>
+            <h3 className="text-xl font-semibold text-slate-900">
+              A straightforward way to get started
+            </h3>
             <p className="mt-3 leading-7 text-slate-700">
-              Choose a tool that matches your task, provide the requested information or select your file, then review the result. Each tool provides instructions to guide you through its supported workflow. For technical calculations, check the assumptions and confirm that the results meet your project requirements.
+              Choose a tool that matches your task, provide the requested
+              information or select your file, then review the result. Each
+              tool provides instructions for its supported workflow. For
+              technical calculations, check the assumptions and confirm that
+              the results meet your project requirements.
             </p>
           </div>
         </div>
       </section>
-      {/* Partnership invitation */}
+
       <section className="bg-slate-950 px-5 py-16 text-white sm:py-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-7 rounded-2xl border border-white/10 bg-white/[0.04] p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-300">Grow with YAJU</p>
-            <h2 className="mt-3 text-3xl font-bold">Let’s build digital solutions together.</h2>
-            <p className="mt-3 leading-7 text-slate-300">We welcome technology, business, strategic and affiliate partners who want to create more value through practical digital tools.</p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-300">
+              Grow with YAJU
+            </p>
+            <h2 className="mt-3 text-3xl font-bold">
+              Let’s build digital solutions together.
+            </h2>
+            <p className="mt-3 leading-7 text-slate-300">
+              We welcome technology, business, strategic and affiliate
+              partners who want to create more value through practical
+              digital tools.
+            </p>
           </div>
-          <Link href="/partners" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white transition hover:bg-blue-500">
+          <Link
+            href="/partners"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 font-semibold text-white transition hover:bg-blue-500"
+          >
             Become a Partner <ArrowRight size={18} />
           </Link>
         </div>
       </section>
-      {/* Waitlist signup */}
+
       <WaitlistForm />
-      {/* Call to action */}
       <CallToAction />
-      {/* Floating AI chatbot */}
       <AIAssistant />
     </main>
   );
