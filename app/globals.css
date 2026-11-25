@@ -294,3 +294,61 @@ body {
 .leaflet-control-container {
   z-index: 7;
 }
+
+
+/* Lightweight ambient technology animation for the homepage hero. */
+.yaju-hero-tech {
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.62;
+  background-image:
+    radial-gradient(circle at 18% 28%, rgba(37, 99, 235, 0.18) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 78% 22%, rgba(14, 165, 233, 0.2) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 62% 76%, rgba(37, 99, 235, 0.16) 0 1.5px, transparent 2px),
+    linear-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px);
+  background-size: 260px 220px, 320px 260px, 280px 240px, 48px 48px, 48px 48px;
+  mask-image: linear-gradient(to bottom, transparent, black 16%, black 82%, transparent);
+  animation: yaju-tech-drift 32s linear infinite;
+}
+
+.yaju-hero-tech::before,
+.yaju-hero-tech::after {
+  position: absolute;
+  content: "";
+  width: min(58vw, 680px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(37, 99, 235, 0.025), 0 0 0 86px rgba(14, 165, 233, 0.025);
+  animation: yaju-orbit-pulse 12s ease-in-out infinite;
+}
+
+.yaju-hero-tech::before {
+  top: -42%;
+  right: -12%;
+}
+
+.yaju-hero-tech::after {
+  bottom: -62%;
+  left: -18%;
+  animation-delay: -6s;
+}
+
+@keyframes yaju-tech-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 260px 110px, -160px 260px, 140px -240px, 48px 48px, 48px 48px; }
+}
+
+@keyframes yaju-orbit-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.42; }
+  50% { transform: scale(1.04); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yaju-hero-tech,
+  .yaju-hero-tech::before,
+  .yaju-hero-tech::after {
+    animation: none;
+  }
+}
