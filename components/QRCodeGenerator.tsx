@@ -122,7 +122,7 @@ export default function QRCodeGenerator() {
       })
       .catch(() => { if (active) setResult({ key: requestKey, png: "", svg: "", error: "This content is too long to fit in a QR code. Try a shorter value." }); });
     return () => { active = false; };
-  }, [payload.data, requestKey, size, foreground, background]);
+  }, [payload.data, requestKey, size, foreground, background, logo]);
 
   const download = (format: "png" | "svg") => {
     if (!output) return;

@@ -90,7 +90,7 @@ export default function DocumentsGuidePage() {
             <li>Keep an unchanged copy of the original document, especially when it is a report, contract or official record.</li>
             <li>Check that the file opens correctly and that its pages are in the intended order and orientation.</li>
             <li>For password-protected files, make sure you are authorised to process the document and have the required password.</li>
-            <li>Review your organisation's rules before uploading confidential or personal information to an online service.</li>
+            <li>Review your organisation&apos;s rules before uploading confidential or personal information to an online service.</li>
           </ul>
         </section>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import ToolLearningContent from "@/components/ToolLearningContent";
 import { ArrowLeft } from "lucide-react";
 import proj4 from "proj4";
+import type { LayerGroup, Map as LeafletMap } from "leaflet";
 import {
   useEffect,
   useMemo,
@@ -1163,9 +1164,9 @@ function MapPreview({
 }) {
   const containerRef =
     useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerLayerRef = useRef<any>(null);
-  const leafletRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerLayerRef = useRef<LayerGroup | null>(null);
+  const leafletRef = useRef<typeof import("leaflet") | null>(null);
 
   const [isMapReady, setIsMapReady] =
     useState(false);

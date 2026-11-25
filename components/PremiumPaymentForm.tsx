@@ -35,7 +35,6 @@ export default function PremiumPaymentForm({
   amountTzs,
   billingPeriod,
   airtelLipaNamba,
-  accountReference,
   checkoutConfigured,
 }: PremiumPaymentFormProps) {
   const [transactionReference, setTransactionReference] =
