@@ -530,7 +530,7 @@ export default function WaterStorageCalculatorPage() {
                     {field("Runoff coefficient", runoff, setRunoff, "0–1", {
                       min: "0",
                       max: "1",
-                      hint: "Represents the share of rainfall converted to catchment runoff. Adjust for catchment surface type and condition.",
+                      hint: "The prefilled 0.85 is an editable planning assumption, not a universal roof coefficient. Tanzania Ministry of Water (2020) gives 0.8–0.95 for metal roofs and 0.6–0.9 for tiled roofs; choose a value for the actual material and condition, or use measured data where available.",
                     })}
                     {field("Collection efficiency", collectionEfficiency, setCollectionEfficiency, "%", {
                       min: "0.01",
