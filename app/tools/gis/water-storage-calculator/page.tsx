@@ -12,6 +12,7 @@ import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
 import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology/domain/geometry";
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
+import DailyRainwaterSimulation from "@/components/DailyRainwaterSimulation";
 import RainfallUploadPanel from "@/components/RainfallUploadPanel";
 import type { UploadedRainfallAnalysis } from "@/features/hydrology/domain/rainfall-upload";
 
@@ -741,6 +742,15 @@ export default function WaterStorageCalculatorPage() {
                 <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
                   <strong>Uploaded rainfall dataset active:</strong> {uploadedRainfallFile}. Uploaded annual rainfall and daily CDD analysis are used in the storage calculation.
                 </p>
+              )}
+              {mode === "rainwater" && uploadedRainfallAnalysis && (
+                <DailyRainwaterSimulation
+                  records={uploadedRainfallAnalysis.records}
+                  catchmentAreaM2={Number(catchmentArea)}
+                  runoffCoefficient={Number(runoff)}
+                  collectionEfficiency={Number(collectionEfficiency) / 100}
+                  dailyDemandM3={(Number(people) * Number(demand)) / 1000}
+                />
               )}
             </div>
 
