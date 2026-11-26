@@ -12,6 +12,7 @@ import { cubicMetresToLitres } from "@/features/hydrology/domain/units";
 import { parseFiniteInput } from "@/features/hydrology/domain/validation";
 import { parseSiteCoordinates, type GeographicPoint } from "@/features/hydrology/domain/geometry";
 import WaterStorageMapPreview from "@/components/WaterStorageMapPreview";
+import DailyRainwaterSimulation from "@/components/DailyRainwaterSimulation";
 import RainfallUploadPanel from "@/components/RainfallUploadPanel";
 import type { UploadedRainfallAnalysis } from "@/features/hydrology/domain/rainfall-upload";
 
@@ -273,7 +274,7 @@ export default function WaterStorageCalculatorPage() {
             ],
             note: result.usesRatedDischargeEstimate
               ? "Production uses pump-rated discharge as an estimate because actual operating discharge was not entered. Sustainable borehole yield remains a separate limiting input."
-              : "Production is limited by measured sustainable borehole yield, pump rating, and entered actual operating discharge.",
+              : "Production is limited by measured sustainable borehole yield, pump rating, and entered actual operating discharge. This estimates daily supply and reserve volume only; it does not select a pump or calculate total dynamic head, drawdown, motor power, or a pump duty point.",
           }),
         };
       }
@@ -298,7 +299,7 @@ export default function WaterStorageCalculatorPage() {
               { id: "gross-irrigation", label: "Gross irrigation depth", value: `${fmt(result.grossIrrigationMmPerDay)} mm/day` },
               { id: "gross-demand", label: "Gross water demand", value: `${fmt(result.grossDemandM3PerDay)} m³/day` },
             ],
-            note: "ETo and effective rainfall are manual inputs. Irrigation climate-data integration is not included in this update.",
+            note: "Uses the FAO-56 single crop-coefficient relationship ETc = ETo × Kc, then subtracts entered effective rainfall and divides by field application efficiency. ETo and effective rainfall are manual inputs; soil-water depletion, leaching requirement, conveyance losses outside the entered efficiency, and irrigation scheduling are not modelled.",
           }),
         };
       }
@@ -529,7 +530,7 @@ export default function WaterStorageCalculatorPage() {
                     {field("Runoff coefficient", runoff, setRunoff, "0–1", {
                       min: "0",
                       max: "1",
-                      hint: "Represents the share of rainfall converted to catchment runoff. Adjust for catchment surface type and condition.",
+                      hint: "The prefilled 0.85 is an editable planning assumption, not a universal roof coefficient. Tanzania Ministry of Water (2020) gives 0.8–0.95 for metal roofs and 0.6–0.9 for tiled roofs; choose a value for the actual material and condition, or use measured data where available.",
                     })}
                     {field("Collection efficiency", collectionEfficiency, setCollectionEfficiency, "%", {
                       min: "0.01",
@@ -741,6 +742,15 @@ export default function WaterStorageCalculatorPage() {
                 <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
                   <strong>Uploaded rainfall dataset active:</strong> {uploadedRainfallFile}. Uploaded annual rainfall and daily CDD analysis are used in the storage calculation.
                 </p>
+              )}
+              {mode === "rainwater" && uploadedRainfallAnalysis && (
+                <DailyRainwaterSimulation
+                  records={uploadedRainfallAnalysis.records}
+                  catchmentAreaM2={Number(catchmentArea)}
+                  runoffCoefficient={Number(runoff)}
+                  collectionEfficiency={Number(collectionEfficiency) / 100}
+                  dailyDemandM3={(Number(people) * Number(demand)) / 1000}
+                />
               )}
             </div>
 
