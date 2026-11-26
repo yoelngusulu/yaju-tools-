@@ -274,7 +274,7 @@ export default function WaterStorageCalculatorPage() {
             ],
             note: result.usesRatedDischargeEstimate
               ? "Production uses pump-rated discharge as an estimate because actual operating discharge was not entered. Sustainable borehole yield remains a separate limiting input."
-              : "Production is limited by measured sustainable borehole yield, pump rating, and entered actual operating discharge.",
+              : "Production is limited by measured sustainable borehole yield, pump rating, and entered actual operating discharge. This estimates daily supply and reserve volume only; it does not select a pump or calculate total dynamic head, drawdown, motor power, or a pump duty point.",
           }),
         };
       }
@@ -299,7 +299,7 @@ export default function WaterStorageCalculatorPage() {
               { id: "gross-irrigation", label: "Gross irrigation depth", value: `${fmt(result.grossIrrigationMmPerDay)} mm/day` },
               { id: "gross-demand", label: "Gross water demand", value: `${fmt(result.grossDemandM3PerDay)} m³/day` },
             ],
-            note: "ETo and effective rainfall are manual inputs. Irrigation climate-data integration is not included in this update.",
+            note: "Uses the FAO-56 single crop-coefficient relationship ETc = ETo × Kc, then subtracts entered effective rainfall and divides by field application efficiency. ETo and effective rainfall are manual inputs; soil-water depletion, leaching requirement, conveyance losses outside the entered efficiency, and irrigation scheduling are not modelled.",
           }),
         };
       }
