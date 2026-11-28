@@ -11,6 +11,8 @@ import {
 import path from "path";
 import os from "os";
 import crypto from "crypto";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import {
   NATIVE_CONVERSION_UNAVAILABLE_MESSAGE,
@@ -26,6 +28,13 @@ export const dynamic = "force-dynamic";
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed." },
+      { status: 403 }
+    );
+  }
+
   const usage =
     await checkUsageLimit();
 
@@ -37,7 +46,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
@@ -156,6 +165,13 @@ export async function POST(
       Buffer.from(
         await uploadedFile.arrayBuffer()
       );
+
+    if (!hasPdfSignature(inputBytes)) {
+      return NextResponse.json(
+        { message: "The uploaded file is not a valid PDF." },
+        { status: 400 }
+      );
+    }
 
     await writeFile(
       inputPath,

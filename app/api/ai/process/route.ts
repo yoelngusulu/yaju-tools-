@@ -3,6 +3,9 @@ import {
   NextResponse,
 } from "next/server";
 import path from "path";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 import {
   type OpenAIContent,
@@ -47,6 +50,38 @@ const allowedDocumentExtensions = new Set([
   ".docx",
   ".txt",
 ]);
+
+function hasValidFileSignature(file: File, extension: string) {
+  return file.arrayBuffer().then((arrayBuffer) => {
+    const bytes = new Uint8Array(arrayBuffer);
+    const startsWith = (...signature: number[]) =>
+      signature.every((value, index) => bytes[index] === value);
+
+    if (extension === ".pdf") {
+      return new TextDecoder().decode(bytes.subarray(0, 5)) === "%PDF-";
+    }
+    if (extension === ".jpg" || extension === ".jpeg") {
+      return startsWith(0xff, 0xd8, 0xff);
+    }
+    if (extension === ".png") {
+      return startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
+    }
+    if (extension === ".webp") {
+      return bytes.length >= 12
+        && new TextDecoder().decode(bytes.subarray(0, 4)) === "RIFF"
+        && new TextDecoder().decode(bytes.subarray(8, 12)) === "WEBP";
+    }
+    if (extension === ".doc") {
+      return startsWith(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1);
+    }
+    if (extension === ".docx") {
+      return startsWith(0x50, 0x4b, 0x03, 0x04)
+        || startsWith(0x50, 0x4b, 0x05, 0x06)
+        || startsWith(0x50, 0x4b, 0x07, 0x08);
+    }
+    return extension === ".txt";
+  });
+}
 
 function sanitizeFileName(fileName: string) {
   return fileName
@@ -142,6 +177,13 @@ export async function POST(
   request: NextRequest
 ) {
   let uploadedFileId = "";
+
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed." },
+      { status: 403 }
+    );
+  }
 
   try {
     const formData =
@@ -252,6 +294,28 @@ export async function POST(
       );
     }
 
+    const usage = await checkUsageLimit(tool);
+    if (!usage.allowed) {
+      return NextResponse.json(
+        { error: usage.reason },
+        { status: usage.status ?? 429 }
+      );
+    }
+
+    if (typeof actionValue === "string" && actionValue.length > 500) {
+      return NextResponse.json(
+        { error: "The selected action is too long." },
+        { status: 400 }
+      );
+    }
+
+    if (!(await hasValidFileSignature(uploadedFile, extension))) {
+      return NextResponse.json(
+        { error: "The file content does not match its file type." },
+        { status: 400 }
+      );
+    }
+
     const action =
       typeof actionValue === "string"
         ? actionValue.trim()
@@ -299,6 +363,12 @@ export async function POST(
         )
       ) || "ai-result";
 
+    await recordConversionUsage({
+      tool,
+      identityType: usage.identityType,
+      identityId: usage.identityId,
+    });
+
     return textAttachment(
       result,
       `${baseName}-${tool}.txt`
@@ -329,7 +399,9 @@ const status = message.includes("OPENAI_API_KEY")
 
 const clientMessage = isQuotaError
   ? "AI features are temporarily unavailable because API credits are not active. You can continue using PDF and document tools."
-  : message;
+  : status === 503
+    ? "AI processing is temporarily unavailable. Please try again later."
+    : "Unable to process the file with AI. Please try again.";
 
     return NextResponse.json(
       {

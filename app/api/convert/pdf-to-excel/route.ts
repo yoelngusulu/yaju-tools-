@@ -14,6 +14,7 @@ import {
   runNativeExecutable,
 } from "@/lib/nativeExecutables";
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 export const runtime = "nodejs";
@@ -22,6 +23,9 @@ export const dynamic = "force-dynamic";
 export async function POST(
   req: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(req)) {
+    return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
+  }
   const usage =
     await checkUsageLimit("pdf-to-excel");
 
@@ -34,7 +38,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
@@ -100,7 +104,7 @@ export async function POST(
             "Maximum file size is 100 MB.",
         },
         {
-          status: 400,
+          status: 413,
         }
       );
     }
@@ -127,6 +131,13 @@ export async function POST(
       Buffer.from(
         await file.arrayBuffer()
       );
+
+    if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      return NextResponse.json(
+        { error: "The uploaded file is not a valid PDF." },
+        { status: 400 }
+      );
+    }
 
     await fs.writeFile(
       inputPath,

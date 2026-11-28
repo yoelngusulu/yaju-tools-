@@ -5,7 +5,6 @@ const STATIC_ALLOWED_HOSTS = new Set([
   "www.yaju-tools.com",
   "localhost:3000",
   "127.0.0.1:3000",
-  "yaju-git-adsense-publish-2026-10-28-yoelngusulu.vercel.app",
 ]);
 
 function getAllowedHosts() {

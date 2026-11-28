@@ -4,6 +4,8 @@ import {
 } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
+import { hasPdfSignature } from "@/lib/pdf/validation";
 
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
@@ -334,6 +336,13 @@ async function createPdfForRange(
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed." },
+      { status: 403 }
+    );
+  }
+
   const usage = await checkUsageLimit();
 
   if (!usage.allowed) {
@@ -345,7 +354,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
@@ -406,6 +415,16 @@ export async function POST(
 
     const uploadedBytes = await uploadedFile.arrayBuffer();
     const sourceBytes = new Uint8Array(uploadedBytes);
+
+    if (!hasPdfSignature(sourceBytes)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The uploaded file is not a valid PDF.",
+        },
+        { status: 400 }
+      );
+    }
 
     let sourcePdf: PDFDocument;
 

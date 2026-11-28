@@ -13,6 +13,7 @@ import {
   runNativeExecutable,
 } from "@/lib/nativeExecutables";
 import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { isAllowedConversionOrigin } from "@/lib/security/conversionOrigin";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 export const runtime = "nodejs";
@@ -26,6 +27,9 @@ const allowedExtensions = [
 export async function POST(
   request: NextRequest
 ) {
+  if (!isAllowedConversionOrigin(request)) {
+    return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
+  }
   const usage =
     await checkUsageLimit("word-to-pdf");
 
@@ -38,7 +42,7 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.status ?? 429,
       }
     );
   }
