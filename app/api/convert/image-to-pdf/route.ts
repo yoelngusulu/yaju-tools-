@@ -9,12 +9,6 @@ export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-const allowedExtensions = new Set([
-  ".jpg",
-  ".jpeg",
-  ".png",
-]);
-
 function getImageType(fileName: string) {
   const extension = path
     .extname(fileName)

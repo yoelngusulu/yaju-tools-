@@ -5,6 +5,7 @@ import proj4 from "proj4";
 import { ArrowLeft, Clipboard, Compass, Download, RefreshCw, Upload } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type Format = "decimal" | "dms" | "utm";
 type Hemisphere = "N" | "S";
@@ -442,6 +443,7 @@ export default function BearingAzimuthCalculatorPage() {
 
   async function copySummary() {
     await navigator.clipboard.writeText(summary.join("\n"));
+    void recordToolActivity("distance-area-bearing", { operation: "copy" }).catch((error) => console.error("Unable to record bearing activity:", error));
     setCopyLabel("Copied");
     window.setTimeout(() => setCopyLabel("Copy Summary"), 1500);
   }
@@ -469,6 +471,7 @@ export default function BearingAzimuthCalculatorPage() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+    void recordToolActivity("distance-area-bearing", { operation: "export" }).catch((error) => console.error("Unable to record bearing activity:", error));
   }
 
   return (

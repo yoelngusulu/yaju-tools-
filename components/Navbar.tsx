@@ -56,8 +56,11 @@ export default function Navbar() {
 
   useEffect(() => {
     const initialTheme = getInitialTheme();
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
+    const frame = window.requestAnimationFrame(() => {
+      applyTheme(initialTheme);
+      setTheme(initialTheme);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

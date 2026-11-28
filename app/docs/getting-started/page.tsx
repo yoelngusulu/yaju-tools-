@@ -63,7 +63,7 @@ export default function GettingStartedPage() {
             <li><strong>For coordinate work:</strong> identify the source coordinate reference system, datum, units and UTM zone before converting. Do not guess a CRS from the coordinate values alone.</li>
             <li><strong>For document and image work:</strong> keep an original copy and review the processed file before sharing it.</li>
             <li><strong>For calculations:</strong> check the input units and assumptions, then compare important results with an independent source or method.</li>
-            <li><strong>For sensitive information:</strong> review the Privacy Policy and your organisation's data-handling rules before uploading files.</li>
+            <li><strong>For sensitive information:</strong> review the Privacy Policy and your organisation&apos;s data-handling rules before uploading files.</li>
           </ul>
         </section>
 

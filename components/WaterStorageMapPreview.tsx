@@ -39,7 +39,9 @@ export default function WaterStorageMapPreview({
   const [draftPoints, setDraftPoints] = useState<GeographicPoint[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
 
-  siteSelectRef.current = onSiteSelect;
+  useEffect(() => {
+    siteSelectRef.current = onSiteSelect;
+  }, [onSiteSelect]);
 
   const setMode = (mode: InteractionMode) => {
     modeRef.current = mode;

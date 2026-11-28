@@ -214,7 +214,7 @@ export const learningArticles: LearningArticle[] = [
       {
         heading: "Understand the rainfall upload limits",
         paragraphs: [
-          "Bulk Excel and CSV rainfall analysis has a dedicated usage quota. Free accounts can complete two successful bulk analyses in each rolling 24-hour period, while active Premium accounts have unlimited bulk analyses. A complete uploaded dataset counts as one analysis, irrespective of row count.",
+          "Bulk Excel and CSV rainfall analysis has a per-tool rolling 24-hour quota. Guests can complete two successful bulk analyses and registered Free users can complete five, while active Premium accounts have unlimited bulk analyses. A complete uploaded dataset counts as one analysis, irrespective of row count.",
           "Single-point NASA POWER rainfall retrievals and manual single-point rainfall inputs do not consume the bulk-file quota. Invalid files are rejected before a quota reservation is made; the file-size and daily-record limits still apply."
         ]
       },

@@ -40,9 +40,12 @@ export default function LoginPage() {
     const nextPath = getSafeNextPath();
 
     if (nextPath !== "/dashboard") {
-      setRegisterHref(
-        `/register?next=${encodeURIComponent(nextPath)}`
-      );
+      const frame = window.requestAnimationFrame(() => {
+        setRegisterHref(
+          `/register?next=${encodeURIComponent(nextPath)}`
+        );
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
   }, []);
 

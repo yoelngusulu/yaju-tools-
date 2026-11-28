@@ -183,7 +183,7 @@ export default function RainfallUploadPanel({ onApply }: Props) {
       const response = await fetch("/api/tools/water-storage-csv-usage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ records: parsed.records }),
+        body: JSON.stringify({ records: parsed.records, eventId: crypto.randomUUID() }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Rainfall CSV analysis could not be completed.");

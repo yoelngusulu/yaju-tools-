@@ -13,7 +13,7 @@ import {
   isPythonRuntimeError,
   runNativeExecutable,
 } from "@/lib/nativeExecutables";
-import { checkUsageLimit } from "@/lib/supabase/usageLimit";
+import { checkUsageLimit, releaseUsageReservation } from "@/lib/supabase/usageLimit";
 import { recordConversionUsage } from "@/lib/supabase/recordUsage";
 
 export const runtime = "nodejs";
@@ -38,10 +38,11 @@ export async function POST(
         limit: usage.limit,
       },
       {
-        status: 429,
+        status: usage.unavailable ? 503 : 429,
       }
     );
   }
+  let usageCommitted = !usage.reservationId;
 
   const tempDir =
     await fs.mkdtemp(
@@ -165,7 +166,9 @@ export async function POST(
       tool: "pdf-to-word",
       identityType: usage.identityType,
       identityId: usage.identityId,
+      reservationId: usage.reservationId,
     });
+    usageCommitted = true;
 
     return new NextResponse(
       output,
@@ -226,6 +229,7 @@ export async function POST(
       }
     );
   } finally {
+    if (!usageCommitted) await releaseUsageReservation(usage).catch((error) => console.error("Unable to release failed PDF-to-Word quota:", error));
     await fs.rm(
       tempDir,
       {

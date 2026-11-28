@@ -4,6 +4,7 @@ import Link from "next/link";
 import ToolLearningContent from "@/components/ToolLearningContent";
 import { ArrowLeft } from "lucide-react";
 import proj4 from "proj4";
+import type { LayerGroup, Map as LeafletMap } from "leaflet";
 import {
   useEffect,
   useMemo,
@@ -14,6 +15,7 @@ import {
 import * as XLSX from "xlsx";
 
 import { saveConversionHistory } from "@/lib/supabase/conversionHistory";
+import { recordToolActivity } from "@/lib/tools/activity";
 
 type Mode =
   | "dd-to-dms"
@@ -1162,9 +1164,9 @@ function MapPreview({
 }) {
   const containerRef =
     useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerLayerRef = useRef<any>(null);
-  const leafletRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerLayerRef = useRef<LayerGroup | null>(null);
+  const leafletRef = useRef<typeof import("leaflet") | null>(null);
 
   const [isMapReady, setIsMapReady] =
     useState(false);
@@ -2020,6 +2022,7 @@ export default function CoordinatesConverterPage() {
   async function copyResult() {
     if (result) {
       await navigator.clipboard.writeText(result);
+      void recordToolActivity("coordinates-converter", { operation: "copy" }).catch((error) => console.error("Unable to record coordinate activity:", error));
     }
   }
 
