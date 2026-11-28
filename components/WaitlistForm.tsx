@@ -3,8 +3,6 @@
 import { FormEvent, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 
-const waitlistUrl = process.env.NEXT_PUBLIC_FORMSPREE_WAITLIST_URL;
-
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function WaitlistForm() {
@@ -37,24 +35,18 @@ export default function WaitlistForm() {
       return;
     }
 
-    if (!waitlistUrl) {
-      setStatus("error");
-      setMessage("The waitlist is being set up. Please try again later.");
-      return;
-    }
-
     try {
       setStatus("submitting");
 
-      const response = await fetch(waitlistUrl, {
+      const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: {
-          Accept: "application/json",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: trimmedEmail,
-          source: "YAJU Waitlist",
+          website,
+          consent: true,
         }),
       });
 
